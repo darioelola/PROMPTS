@@ -48,6 +48,8 @@ El valor de la columna "Estado"
 
 El valor de la columna "Asignado a"
 
+El valor de la columna "Asunto"
+
 ✅ Paso 3: Generación del archivo Excel final
 Creá un archivo .xlsx con la siguiente estructura:
 
@@ -56,7 +58,7 @@ A	Números extraídos de la Columna A del archivo principal (Nombre en excel res
 B	Contenido de la Columna D del archivo principal (Nombre en excel resultante: Estado TRELLO)
 C	Valor de la columna "Estado" desde issues.csv (Nombre en excel resultante: Estado RM )
 D	Valor de la columna "Asignado a" desde issues.csv (Nombre en excel resultante: Asignado a)
+E   Valor de la columna "Asunto" desde issues.csv (Nombre en excel resultante: Asunto)
 📦 Entrega esperada
 Un archivo Excel (.xlsx) generado con la estructura anterior, correctamente combinado y listo para ser descargado y utilizado.
-
 
