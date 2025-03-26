@@ -1,97 +1,64 @@
-🎯 Prompt para ChatGPT – Procesamiento y Formateo de Archivos CSV a Excel
+📄 Solicitud de procesamiento de datos a partir de archivos CSV y generación de archivo Excel consolidado
 
-Hola ChatGPT, necesito que proceses dos archivos CSV para generar un archivo Excel con información combinada y un formato específico. Seguí detalladamente estos pasos:
+Hola, necesito que proceses dos archivos CSV para generar un nuevo archivo Excel con información combinada. A continuación, detallo todos los pasos que debés seguir cuidadosamente para que el proceso sea exitoso:
 
 🔹 Archivos involucrados
-
 Archivo principal
 
-Nombre con cadena numérica (ej: 123456.csv)
+El nombre del archivo es una cadena numérica (por ejemplo: 123456.csv).
 
-Delimitado por comas (,)
+Está delimitado por comas (,).
 
-La columna A contiene cadenas de texto que incluyen un número entre la palabra "RM" y el símbolo "|".
+Contiene una columna A con cadenas de texto que incluyen un número entre la palabra "RM" y el símbolo "|".
 
-La columna D contiene información adicional que debe extraerse completa.
+La columna D contiene información adicional que debe ser extraída completa.
 
-Archivo referencial
+Archivo adicional (referencial)
 
 Nombre: issues.csv
 
 Delimitado por punto y coma (;)
 
-Contiene columnas con información relacionada a los números RM.
+Contiene una columna con valores numéricos (formato int64) que deben ser comparados con los números extraídos del archivo principal.
 
 ⚠️ Consideraciones importantes
+La columna del archivo principal contiene los números como texto (string), mientras que issues.csv los tiene como números (int64).
+Convertí los valores extraídos del archivo principal a tipo numérico antes de realizar el cruce.
 
-Convertí los valores extraídos de la columna A del archivo principal a tipo numérico (están como texto).
+Si al leer alguno de los archivos ocurre un error de codificación, intentá reabrirlos utilizando una codificación alternativa como:
 
-Comparalos con la columna correspondiente en issues.csv (formato int64).
+"utf-8-sig"
 
-Si hay errores de lectura por codificación, usá alternativas como "utf-8-sig" o "latin1".
+"latin1"
 
+🔄 Proceso detallado
 ✅ Paso 1: Extracción de datos del archivo principal
+Desde la Columna A, extraé únicamente los números ubicados entre la palabra "RM" y el símbolo "|" en cada celda.
 
-De la columna A, extraé solo el número ubicado entre "RM" y el símbolo "|". Mantené el encabezado original.
+Mantené el encabezado original de la columna A.
 
-Extraé también el contenido completo de la columna D.
+Extraé también el contenido completo de la Columna D, incluyendo su encabezado.
 
 ✅ Paso 2: Cruce con issues.csv
+Usá los números extraídos de la Columna A como clave de búsqueda para encontrar coincidencias en issues.csv.
 
-Usá los números RM extraídos como clave para buscar coincidencias en issues.csv.
+Por cada coincidencia, extraé los siguientes campos:
 
-Por cada coincidencia, extraé y asigná las siguientes columnas:
+El valor de la columna "Estado"
 
-"Estado" → columna Estado RM
+El valor de la columna "Asignado a"
 
-"Asignado a" → columna Asignado a
-
-"Asunto" → columna Asunto
+El valor de la columna "Asunto"
 
 ✅ Paso 3: Generación del archivo Excel final
+Creá un archivo .xlsx con la siguiente estructura:
 
-Creá un archivo .xlsx con esta estructura:
+Columna	Descripción
+A	Números extraídos de la Columna A del archivo principal (Nombre en excel resultante: Número RM)
+B	Contenido de la Columna D del archivo principal (Nombre en excel resultante: Estado TRELLO)
+C	Valor de la columna "Estado" desde issues.csv (Nombre en excel resultante: Estado RM )
+D	Valor de la columna "Asignado a" desde issues.csv (Nombre en excel resultante: Asignado a)
+E   Valor de la columna "Asunto" desde issues.csv (Nombre en excel resultante: Asunto)
+📦 Entrega esperada
+Un archivo Excel (.xlsx) generado con la estructura anterior, correctamente combinado y listo para ser descargado y utilizado.
 
-Columna	Contenido extraído de
-A - Número RM	Número extraído de la columna A del archivo principal
-B - Estado TRELLO	Contenido completo de la columna D del archivo principal
-C - Estado RM	Valor de la columna "Estado" desde issues.csv
-D - Asignado a	Valor de la columna "Asignado a" desde issues.csv
-E - Asunto	Valor de la columna "Asunto" desde issues.csv
-🎨 Formato condicional requerido en el archivo Excel
-
-Color Amarillo:
-Si la celda de la columna Estado RM está vacía, resaltá esa fila de color amarillo (solo en las columnas:
-Número RM, Estado TRELLO, Estado RM, Asignado a, Asunto).
-
-Color Rojo:
-Si se da la siguiente condición combinada:
-
-En Estado TRELLO hay alguno de estos valores exactos:
-
-less
-Copiar
-Editar
-04 En Desarrollo | STAND BY
-05 En Desarrollo | EN CURSO
-07 En Prueba QA | BACKLOG
-08 En Prueba QA | EN CURSO
-10 Solicitud de Pasaje a PROD.
-Y en Asignado a está alguno de estos nombres:
-
-nginx
-Copiar
-Editar
-Dario Elola
-Nelson Daniel Bordón
-Valentina Juszkiewicz
-Renzo Antonioli
-Lucas Gutierrez
-Vanina Zylberg
-Carolina Noemi Gualdi
-Franchesca Gabriela Rivas Veliz
-Entonces, resaltá esa fila con color rojo (solo en las columnas:
-Número RM, Estado TRELLO, Estado RM, Asignado a, Asunto).
-
-📦 Resultado esperado:
-Un archivo .xlsx correctamente estructurado, con las filas coloreadas según las reglas especificadas y los datos combinados de ambos archivos.
