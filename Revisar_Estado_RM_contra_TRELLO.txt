@@ -1,8 +1,9 @@
-📄 Solicitud de procesamiento de datos a partir de archivos CSV y generación de archivo Excel consolidado
+Solicitud de procesamiento de datos a partir de archivos CSV y generación de archivo Excel consolidado
 
 Hola, necesito que proceses dos archivos CSV para generar un nuevo archivo Excel con información combinada. A continuación, detallo todos los pasos que debés seguir cuidadosamente para que el proceso sea exitoso:
 
 🔹 Archivos involucrados
+
 Archivo principal
 
 El nombre del archivo es una cadena numérica (por ejemplo: 123456.csv).
@@ -22,7 +23,9 @@ Delimitado por punto y coma (;)
 Contiene una columna con valores numéricos (formato int64) que deben ser comparados con los números extraídos del archivo principal.
 
 ⚠️ Consideraciones importantes
+
 La columna del archivo principal contiene los números como texto (string), mientras que issues.csv los tiene como números (int64).
+
 Convertí los valores extraídos del archivo principal a tipo numérico antes de realizar el cruce.
 
 Si al leer alguno de los archivos ocurre un error de codificación, intentá reabrirlos utilizando una codificación alternativa como:
@@ -32,7 +35,9 @@ Si al leer alguno de los archivos ocurre un error de codificación, intentá rea
 "latin1"
 
 🔄 Proceso detallado
+
 ✅ Paso 1: Extracción de datos del archivo principal
+
 Desde la Columna A, extraé únicamente los números ubicados entre la palabra "RM" y el símbolo "|" en cada celda.
 
 Mantené el encabezado original de la columna A.
@@ -40,25 +45,87 @@ Mantené el encabezado original de la columna A.
 Extraé también el contenido completo de la Columna D, incluyendo su encabezado.
 
 ✅ Paso 2: Cruce con issues.csv
+
 Usá los números extraídos de la Columna A como clave de búsqueda para encontrar coincidencias en issues.csv.
 
 Por cada coincidencia, extraé los siguientes campos:
 
-El valor de la columna "Estado"
+El valor de la columna "Estado".
 
-El valor de la columna "Asignado a"
-
-El valor de la columna "Asunto"
+El valor de la columna "Asignado a".
 
 ✅ Paso 3: Generación del archivo Excel final
+
 Creá un archivo .xlsx con la siguiente estructura:
 
 Columna	Descripción
-A	Números extraídos de la Columna A del archivo principal (Nombre en excel resultante: Número RM)
-B	Contenido de la Columna D del archivo principal (Nombre en excel resultante: Estado TRELLO)
-C	Valor de la columna "Estado" desde issues.csv (Nombre en excel resultante: Estado RM )
-D	Valor de la columna "Asignado a" desde issues.csv (Nombre en excel resultante: Asignado a)
-E   Valor de la columna "Asunto" desde issues.csv (Nombre en excel resultante: Asunto)
-📦 Entrega esperada
-Un archivo Excel (.xlsx) generado con la estructura anterior, correctamente combinado y listo para ser descargado y utilizado.
+A	Números extraídos de la Columna A del archivo principal (Nombre en Excel: Número RM)
+B	Contenido de la Columna D del archivo principal (Nombre en Excel: Estado TRELLO)
+C	Valor de la columna "Estado" desde issues.csv (Nombre en Excel: Estado RM)
+D	Valor de la columna "Asignado a" desde issues.csv (Nombre en Excel: Asignado a)
+E	Asunto (si aplica)
+🎨 Formato y resaltado condicional en Excel
 
+Si una celda en la columna "Estado RM" está vacía, rellená toda la fila correspondiente de las columnas:
+
+Número RM
+
+Estado TRELLO
+
+Estado RM
+
+Asignado a
+
+Asunto
+
+...con color amarillo.
+
+Si una fila cumple con las siguientes dos condiciones simultáneamente:
+
+En la columna "Estado TRELLO" contiene alguno de estos valores:
+
+04 En Desarrollo | STAND BY
+
+05 En Desarrollo | EN CURSO
+
+07 En Prueba QA | BACKLOG
+
+08 En Prueba QA | EN CURSO
+
+10 Solicitud de Pasaje a PROD.
+
+Y en la columna "Asignado a" se encuentra alguno de estos nombres:
+
+Dario Elola
+
+Nelson Daniel Bordón
+
+Valentina Juszkiewicz
+
+Renzo Antonioli
+
+Lucas Gutierrez
+
+Vanina Zylberg
+
+Carolina Noemi Gualdi
+
+Franchesca Gabriela Rivas Veliz
+
+Entonces, rellená esa fila en las columnas:
+
+Número RM
+
+Estado TRELLO
+
+Estado RM
+
+Asignado a
+
+Asunto
+
+...con color rojo.
+
+📦 Entrega esperada
+
+Un archivo Excel (.xlsx) generado con la estructura anterior, correctamente combinado y con los colores aplicados según las reglas definidas.
