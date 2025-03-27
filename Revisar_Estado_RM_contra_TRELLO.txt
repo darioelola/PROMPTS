@@ -63,7 +63,7 @@ A	Números extraídos de la Columna A del archivo principal (Nombre en Excel: N�
 B	Contenido de la Columna D del archivo principal (Nombre en Excel: Estado TRELLO)
 C	Valor de la columna "Estado" desde issues.csv (Nombre en Excel: Estado RM)
 D	Valor de la columna "Asignado a" desde issues.csv (Nombre en Excel: Asignado a)
-E	Asunto (si aplica)
+E	Valor de la columna "Asunto" desde issues.csv (Nombre en Excel: Asunto)
 🎨 Formato y resaltado condicional en Excel
 
 Si una celda en la columna "Estado RM" está vacía, rellená toda la fila correspondiente de las columnas:
