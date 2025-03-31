@@ -86,3 +86,5 @@ Recurso 2
 Recurso 2
 
 Recurso 3
+Si en un registro la columna **"Asunto"** esta vacia: a toda la final resaltada en amarillo. la celda de la columna Asunto (de esa fila) completalo con el texto "RM CERREDO".
+
