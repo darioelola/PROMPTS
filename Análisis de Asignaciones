@@ -43,7 +43,7 @@ Extraer únicamente los números entre *** y *** en la Columna E.
 
 Conservar el encabezado original de la Columna A.
 
-Extraer también el contenido completo de las columnas C, D, y E con sus respectivos encabezados.
+Extraer también el contenido completo de las columnas C, D, y F con sus respectivos encabezados.
 
 ✅ Paso 2: Cruce con issues.csv
 Utilizar los números extraídos como clave de búsqueda.
