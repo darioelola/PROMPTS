@@ -137,7 +137,7 @@ Un archivo Excel (.xlsx) generado con la estructura anterior, correctamente comb
   - `04 En Desarrollo | STAND BY`  
   - `05 En Desarrollo | EN CURSO`
 
-  Y en la columna **"Estado RM"** existe cualquier texto que contenga las palabras **"Analisis"** o **"QA"** (no distingue mayúsculas o minúsculas), entonces:
+  Y en la columna **"Estado RM"** existe cualquier texto que no contenga las palabras **"Desarrollo"** (no distingue mayúsculas o minúsculas), entonces:
 
   Rellená toda la fila correspondiente de las columnas:
 
@@ -148,3 +148,5 @@ Un archivo Excel (.xlsx) generado con la estructura anterior, correctamente comb
   - Asunto  
 
   ...con color **rojo**.
+
+  
