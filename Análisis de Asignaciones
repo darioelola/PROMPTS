@@ -14,7 +14,7 @@ Columna A: contiene texto con un número embebido entre la palabra "RM" y el sí
 
 Columna C, D y F: contienen datos adicionales relevantes que deben conservarse.
 
-De la columna E: contiene texto con un número embebido entre los caracteres *** (por ejemplo: "*** 01 ***").
+De la columna E: contiene texto con un número embebido entre los caracteres *** (por ejemplo: "{ 01 }").
 
 2. Archivo adicional de referencia
 Nombre: issues.csv.
@@ -39,7 +39,7 @@ En caso de errores de codificación al leer los archivos, intentar con las sigui
 🔄 Proceso detallado
 ✅ Paso 1: Extracción de datos del archivo principal
 Extraer únicamente los números entre "RM" y "|" en la Columna A.
-Extraer únicamente los números entre *** y *** en la Columna E.
+Extraer únicamente los números entre { y } en la Columna E.
 
 Conservar el encabezado original de la Columna A.
 
@@ -61,22 +61,20 @@ Crear un archivo .xlsx con las siguientes columnas y encabezados:
 
 Columna	Descripción
 
-
-A	Contenido de la Columna C del archivo principal (Asignado A) -- Eliminar todo lo que esta entre () incluyendo los ()
-B	Contenido de la Columna D del archivo principal (Proyecto)
-C Números extraídos de la Columna E del archivo principal (PRIORIDAD)
+A	Contenido de la Columna C del archivo principal (Asignado A) -- Eliminar todo lo que esta entre () incluyendo los () -- Converti todo a mayuscula
+B Números extraídos de la Columna E del archivo principal (PRIORIDAD)
+C	Contenido de la Columna D del archivo principal (Proyecto)
 D	Contenido de la Columna F del archivo principal (Estado TRELLO)
 E	Números extraídos de la Columna A del archivo principal (Número RM)
 F	Valor de la columna "Asunto" desde issues.csv (Asunto)
 
+Los titulos de las celdas que esten en mayuscula y negrita, y fondo gris claro.
+
 Ordenar el archivo final por las siguientes columnas, en este orden:
 
 Asignado A
-
-Proyecto
-
 Priorirdad
-
+Proyecto
 Estado TRELLO
 
 Luego de ordenar, insertar una fila en blanco cada vez que cambie el valor de la columna Asignado A, para separar visualmente los recursos asignados.
@@ -96,4 +94,6 @@ Recurso 3
 Si la columna "Proyecto", dice "Tablero de Control", esntonces completar la Columna "Asunto" con el contenido de la Columna A del archivo principal
 
 Si en un registro la columna **"Asunto"** esta vacia: a toda la final resaltada en amarillo. la celda de la columna Asunto (de esa fila) completalo con el texto "RM CERREDO".
+
+El texto de la columna 
 
