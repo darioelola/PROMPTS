@@ -180,20 +180,4 @@ Un archivo Excel (.xlsx) generado con la estructura anterior, correctamente comb
 
   ...con color **rojo**.
 
- Si en un registro la columna **"Estado TRELLO"** NO contiene alguno de estos valores:
-
-  - `04 En Desarrollo | STAND BY`
-
-  Y en la columna **"Estado RM"** existe cualquier texto que contenga las palabras **"STAND BY"** (no distingue mayúsculas o minúsculas), entonces:
-
-  Rellená toda la fila correspondiente de las columnas:
-
-  - Número RM  
-  - Estado TRELLO  
-  - Estado RM  
-  - Asignado a  
-  - Asunto  
-
-  ...con color **rojo**.
-
   
