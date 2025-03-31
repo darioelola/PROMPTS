@@ -65,7 +65,7 @@ Columna	Descripción
 A	Contenido de la Columna C del archivo principal (Asignado A) -- Eliminar todo lo que esta entre () incluyendo los ()
 B	Contenido de la Columna D del archivo principal (Proyecto)
 C Números extraídos de la Columna E del archivo principal (PRIORIDAD)
-D	Contenido de la Columna E del archivo principal (Estado TRELLO)
+D	Contenido de la Columna F del archivo principal (Estado TRELLO)
 E	Números extraídos de la Columna A del archivo principal (Número RM)
 F	Valor de la columna "Asunto" desde issues.csv (Asunto)
 
