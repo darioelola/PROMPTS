@@ -1,0 +1,88 @@
+🔧 Solicitud de procesamiento de archivos CSV y consolidación de datos en Excel
+
+Hola, necesito que proceses dos archivos CSV para generar un nuevo archivo Excel (.xlsx) con información combinada y ordenada según criterios específicos. A continuación, se detallan los requerimientos técnicos del proceso:
+
+📁 Archivos involucrados
+1. Archivo principal
+El nombre del archivo es una cadena numérica (ejemplo: 123456.csv).
+
+Delimitado por comas (,).
+
+Contiene las siguientes columnas relevantes:
+
+Columna A: contiene texto con un número embebido entre la palabra "RM" y el símbolo "|" (por ejemplo: "ID RM12345| Detalle").
+
+Columna C, D y E: contienen datos adicionales relevantes que deben conservarse.
+
+2. Archivo adicional de referencia
+Nombre: issues.csv.
+
+Delimitado por punto y coma (;).
+
+Contiene columnas con:
+
+Un identificador numérico (formato int64) que debe coincidir con el número extraído de la Columna A del archivo principal.
+
+Información adicional en las columnas: "Estado", "Asignado a", y "Asunto".
+
+⚠️ Consideraciones técnicas
+Los números extraídos de la Columna A están en formato string y deben convertirse a int64 antes de realizar la comparación con los valores de issues.csv.
+
+En caso de errores de codificación al leer los archivos, intentar con las siguientes codificaciones alternativas:
+
+"utf-8-sig"
+
+"latin1"
+
+🔄 Proceso detallado
+✅ Paso 1: Extracción de datos del archivo principal
+Extraer únicamente los números entre "RM" y "|" en la Columna A.
+
+Conservar el encabezado original de la Columna A.
+
+Extraer también el contenido completo de las columnas C, D, y E con sus respectivos encabezados.
+
+✅ Paso 2: Cruce con issues.csv
+Utilizar los números extraídos como clave de búsqueda.
+
+Por cada coincidencia en issues.csv, obtener:
+
+El valor de la columna "Estado"
+
+El valor de la columna "Asignado a"
+
+El valor de la columna "Asunto"
+
+✅ Paso 3: Generación del archivo Excel consolidado
+Crear un archivo .xlsx con las siguientes columnas y encabezados:
+
+Columna	Descripción
+
+
+A	Contenido de la Columna C del archivo principal (Asignado A) -- Eliminar todo lo que esta entre () incluyendo los ()
+B	Contenido de la Columna D del archivo principal (Proyecto)
+C	Contenido de la Columna E del archivo principal (Estado TRELLO)
+D	Números extraídos de la Columna A del archivo principal (Número RM)
+E	Valor de la columna "Asunto" desde issues.csv (Asunto)
+
+Ordenar el archivo final por las siguientes columnas, en este orden:
+
+Asignado A
+
+Proyecto
+
+Estado TRELLO
+
+Luego de ordenar, insertar una fila en blanco cada vez que cambie el valor de la columna Asignado A, para separar visualmente los recursos asignados.
+
+📌 Ejemplo visual del resultado
+Asignado A
+
+Recurso 1
+Recurso 1
+Recurso 1
+
+Recurso 2
+Recurso 2
+
+Recurso 3
