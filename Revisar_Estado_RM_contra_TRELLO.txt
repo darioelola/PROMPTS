@@ -1,91 +1,199 @@
-🗂️ Solicitud de procesamiento y análisis cruzado de tickets para control de gestión y consistencia
-Como Líder de Proyecto, requiero el procesamiento y consolidación de información contenida en dos archivos CSV con el fin de generar un archivo Excel (.xlsx) final que permita identificar inconsistencias entre los estados operativos de los tickets y sus asignaciones reales. La finalidad de esta tarea es facilitar el seguimiento de actividades, detectar desvíos y mejorar la trazabilidad en el flujo de trabajo.
+Solicitud de procesamiento de datos a partir de archivos CSV y generación de archivo Excel consolidado
+
+Hola, necesito que proceses dos archivos CSV para generar un nuevo archivo Excel con información combinada. A continuación, detallo todos los pasos que debés seguir cuidadosamente para que el proceso sea exitoso:
 
 🔹 Archivos involucrados
-1. Archivo principal
-El archivo tiene por nombre una cadena numérica (ejemplo: 123456.csv).
 
-Delimitado por comas (,).
+Archivo principal
 
-La columna A contiene cadenas de texto con números embebidos entre la palabra "RM" y el símbolo "|".
+El nombre del archivo es una cadena numérica (por ejemplo: 123456.csv).
 
-La columna D contiene información adicional que debe ser preservada íntegramente.
+Está delimitado por comas (,).
 
-2. Archivo referencial (issues.csv)
-Delimitado por punto y coma (;).
+Contiene una columna A con cadenas de texto que incluyen un número entre la palabra "RM" y el símbolo "|".
 
-Incluye una columna con valores numéricos (int64) que deben ser utilizados para comparar con los números extraídos del archivo principal.
+La columna D contiene información adicional que debe ser extraída completa.
 
-También contiene campos relevantes como Estado, Asignado a y Asunto.
+Archivo adicional (referencial)
 
-⚠️ Consideraciones técnicas clave
-Los números de la columna A del archivo principal están en formato string, mientras que en issues.csv están en formato numérico (int64).
+Nombre: issues.csv
 
-Realizar la conversión correspondiente antes de efectuar el cruce.
+Delimitado por punto y coma (;)
 
-En caso de errores de codificación al leer los archivos, reintentar con codificaciones alternativas como: "utf-8-sig" o "latin1".
+Contiene una columna con valores numéricos (formato int64) que deben ser comparados con los números extraídos del archivo principal.
 
-🔄 Proceso solicitado
+⚠️ Consideraciones importantes
+
+La columna del archivo principal contiene los números como texto (string), mientras que issues.csv los tiene como números (int64).
+
+Convertí los valores extraídos del archivo principal a tipo numérico antes de realizar el cruce.
+
+Si al leer alguno de los archivos ocurre un error de codificación, intentá reabrirlos utilizando una codificación alternativa como:
+
+"utf-8-sig"
+
+"latin1"
+
+🔄 Proceso detallado
+
 ✅ Paso 1: Extracción de datos del archivo principal
-Extraer los números ubicados entre "RM" y "|" en la columna A, manteniendo el encabezado.
 
-Extraer íntegramente el contenido de la columna D, también con su encabezado.
+Desde la Columna A, extraé únicamente los números ubicados entre la palabra "RM" y el símbolo "|" en cada celda.
 
-✅ Paso 2: Cruce de datos con issues.csv
-Utilizar los números extraídos como claves de búsqueda en el archivo issues.csv.
+Mantené el encabezado original de la columna A.
 
-Por cada coincidencia, obtener los siguientes campos:
+Extraé también el contenido completo de la Columna D, incluyendo su encabezado.
 
-"Estado"
+✅ Paso 2: Cruce con issues.csv
 
-"Asignado a"
+Usá los números extraídos de la Columna A como clave de búsqueda para encontrar coincidencias en issues.csv.
 
-"Asunto"
+Por cada coincidencia, extraé los siguientes campos:
 
-✅ Paso 3: Generación del archivo Excel consolidado
-Crear un archivo .xlsx con la siguiente estructura:
+El valor de la columna "Estado".
+
+El valor de la columna "Asignado a".
+
+✅ Paso 3: Generación del archivo Excel final
+
+Creá un archivo .xlsx con la siguiente estructura:
 
 Columna	Descripción
-A	Números RM (extraídos de la columna A del archivo principal)
-B	Estado TRELLO (contenido completo de la columna D del archivo principal)
-C	Estado RM (campo "Estado" desde issues.csv)
-D	Asignado a (desde issues.csv)
-E	Asunto (desde issues.csv)
-🎨 Reglas de formato y resaltado condicional
-🟡 Regla 1: Campos sin cruce
-Si "Estado RM" está vacío, aplicar color de fondo amarillo a toda la fila (columnas A a E).
+A	Números extraídos de la Columna A del archivo principal (Nombre en Excel: Número RM)
+B	Contenido de la Columna D del archivo principal (Nombre en Excel: Estado TRELLO)
+C	Valor de la columna "Estado" desde issues.csv (Nombre en Excel: Estado RM)
+D	Valor de la columna "Asignado a" desde issues.csv (Nombre en Excel: Asignado a)
+E	Valor de la columna "Asunto" desde issues.csv (Nombre en Excel: Asunto)
+🎨 Formato y resaltado condicional en Excel
 
-🔴 Regla 2: Inconsistencia en asignaciones
-Si "Estado TRELLO" contiene alguno de estos valores:
+Si una celda en la columna "Estado RM" está vacía, rellená toda la fila correspondiente de las columnas:
 
+Número RM
 
-04 En Desarrollo | STAND BY  
-05 En Desarrollo | EN CURSO  
-07 En Prueba QA | BACKLOG  
-08 En Prueba QA | EN CURSO  
-10 Solicitud de Pasaje a PROD.
-Y "Asignado a" coincide con alguno de los siguientes nombres:
+Estado TRELLO
 
+Estado RM
 
-Dario Elola  
-Nelson Daniel Bordón  
-Valentina Juszkiewicz  
-Renzo Antonioli  
-Lucas Gutierrez  
-Vanina Zylberg  
-Carolina Noemi Gualdi  
-Franchesca Gabriela Rivas Veliz
-Entonces aplicar color de fondo rojo a toda la fila (columnas A a E).
+Asignado a
 
-🔴 Regla 3: Desfase entre estado declarado y estado real
-Si "Estado TRELLO" contiene:
+Asunto
 
+...con color amarillo.
 
-04 En Desarrollo | STAND BY  
+Si una fila cumple con las siguientes dos condiciones simultáneamente:
+
+En la columna "Estado TRELLO" contiene alguno de estos valores:
+
+04 En Desarrollo | STAND BY
+
 05 En Desarrollo | EN CURSO
-Y "Estado RM" no contiene la palabra "Desarrollo" (sin distinción de mayúsculas), aplicar color rojo a la fila completa (columnas A a E).
 
-Si "Estado TRELLO" no contiene ninguno de los anteriores valores, pero "Estado RM" sí contiene "Desarrollo" (sin distinción de mayúsculas), aplicar color rojo a la fila completa (columnas A a E).
+07 En Prueba QA | BACKLOG
 
-📦 Resultado esperado
-Un archivo Excel (.xlsx) correctamente consolidado, con las estructuras y formatos definidos, que permita realizar un seguimiento efectivo de tickets, identificar asignaciones incorrectas o faltantes, y detectar desvíos en los estados de avance del proyecto.
+08 En Prueba QA | EN CURSO
+
+10 Solicitud de Pasaje a PROD.
+
+Y en la columna "Asignado a" se encuentra alguno de estos nombres:
+
+Dario Elola
+
+Nelson Daniel Bordón
+
+Valentina Juszkiewicz
+
+Renzo Antonioli
+
+Lucas Gutierrez
+
+Vanina Zylberg
+
+Carolina Noemi Gualdi
+
+Franchesca Gabriela Rivas Veliz
+
+Entonces, rellená esa fila en las columnas:
+
+Número RM
+
+Estado TRELLO
+
+Estado RM
+
+Asignado a
+
+Asunto
+
+...con color rojo.
+
+📦 Entrega esperada
+
+Un archivo Excel (.xlsx) generado con la estructura anterior, correctamente combinado y con los colores aplicados según las reglas definidas.
+
+- **➕ Nueva regla adicional de resaltado:**
+
+  Si en un registro la columna **"Estado TRELLO"** contiene alguno de estos valores:
+
+  - `05 En Desarrollo | EN CURSO`
+
+  Y en la columna **"Estado RM"** existe cualquier texto que no contenga las palabras **"Desarrollo"** (no distingue mayúsculas o minúsculas), entonces:
+
+  Rellená toda la fila correspondiente de las columnas:
+
+  - Número RM  
+  - Estado TRELLO  
+  - Estado RM  
+  - Asignado a  
+  - Asunto  
+
+  ...con color **rojo**.
+
+ Si en un registro la columna **"Estado TRELLO"** NO contiene alguno de estos valores:
+
+  - `05 En Desarrollo | EN CURSO`
+
+  Y en la columna **"Estado RM"** existe cualquier texto que contenga las palabras **"Desarrollo"** (no distingue mayúsculas o minúsculas), entonces:
+
+  Rellená toda la fila correspondiente de las columnas:
+
+  - Número RM  
+  - Estado TRELLO  
+  - Estado RM  
+  - Asignado a  
+  - Asunto  
+
+  ...con color **rojo**.
+  
+    Si en un registro la columna **"Estado TRELLO"** contiene alguno de estos valores:
+
+  - `04 En Desarrollo | STAND BY`
+
+  Y en la columna **"Estado RM"** existe cualquier texto que no contenga las palabras **"STAND BY"** (no distingue mayúsculas o minúsculas), entonces:
+
+  Rellená toda la fila correspondiente de las columnas:
+
+  - Número RM  
+  - Estado TRELLO  
+  - Estado RM  
+  - Asignado a  
+  - Asunto  
+
+  ...con color **rojo**.
+
+ Si en un registro la columna **"Estado TRELLO"** NO contiene alguno de estos valores:
+
+  - `04 En Desarrollo | STAND BY`
+
+  Y en la columna **"Estado RM"** existe cualquier texto que contenga las palabras **"STAND BY"** (no distingue mayúsculas o minúsculas), entonces:
+
+  Rellená toda la fila correspondiente de las columnas:
+
+  - Número RM  
+  - Estado TRELLO  
+  - Estado RM  
+  - Asignado a  
+  - Asunto  
+
+  ...con color **rojo**.
+
+  
