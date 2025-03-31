@@ -58,9 +58,7 @@ Si "Estado RM" está vacío, aplicar color de fondo amarillo a toda la fila (col
 🔴 Regla 2: Inconsistencia en asignaciones
 Si "Estado TRELLO" contiene alguno de estos valores:
 
-less
-Copiar
-Editar
+
 04 En Desarrollo | STAND BY  
 05 En Desarrollo | EN CURSO  
 07 En Prueba QA | BACKLOG  
@@ -68,9 +66,7 @@ Editar
 10 Solicitud de Pasaje a PROD.
 Y "Asignado a" coincide con alguno de los siguientes nombres:
 
-nginx
-Copiar
-Editar
+
 Dario Elola  
 Nelson Daniel Bordón  
 Valentina Juszkiewicz  
@@ -84,9 +80,7 @@ Entonces aplicar color de fondo rojo a toda la fila (columnas A a E).
 🔴 Regla 3: Desfase entre estado declarado y estado real
 Si "Estado TRELLO" contiene:
 
-vbnet
-Copiar
-Editar
+
 04 En Desarrollo | STAND BY  
 05 En Desarrollo | EN CURSO
 Y "Estado RM" no contiene la palabra "Desarrollo" (sin distinción de mayúsculas), aplicar color rojo a la fila completa (columnas A a E).
