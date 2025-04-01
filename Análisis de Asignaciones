@@ -1,89 +1,60 @@
-📁 Archivos involucrados
-1. Archivo principal
-El nombre del archivo es una cadena numérica (por ejemplo: 123456.csv). asegurate de poder leer el archivo... convertilo a lo que te sea necesario para poder procesarolo.
 
-Delimitado por comas (,).
+📁 ARCHIVOS INVOLUCRADOS
 
-Contiene las siguientes columnas relevantes:
+1. ARCHIVO PRINCIPAL
+- Nombre: cadena numérica (ejemplo: 123456.csv).
+- Formato: CSV delimitado por comas (,).
+- Columnas relevantes:
+  - Columna A: contiene texto con número embebido entre "RM" y "|". Ejemplo: "ID RM12345| Detalle".
+  - Columnas C, D y F: conservar su contenido original.
+  - Columna E: contiene número entre llaves { }. Ejemplo: "{ 01 }".
 
-Columna A: contiene texto con un número embebido entre la palabra "RM" y el símbolo "|". Ejemplo: "ID RM12345| Detalle".
+2. ARCHIVO DE REFERENCIA
+- Nombre: issues.csv.
+- Formato: CSV delimitado por punto y coma (;).
+- Columnas relevantes:
+  - "#": identificador numérico (int64) que debe coincidir con el número extraído de la columna A.
+  - Columnas adicionales: "Estado", "Asignado a", "Asunto".
 
-Columna C, D y F: contienen datos relevantes que deben conservarse.
+⚙️ CONSIDERACIONES TÉCNICAS
 
-Columna E: contiene texto con un número embebido entre los caracteres { y }. Ejemplo: "{ 01 }".
+- Convertir el número extraído de la columna A del archivo principal a tipo int64.
+- Convertir la columna "#" del archivo issues.csv también a int64.
+- Intentar lectura de archivos con codificaciones: "utf-8-sig" y "latin1".
 
-2. Archivo de referencia
-Nombre: issues.csv.
+🔄 PROCESO DETALLADO
 
-Delimitado por punto y coma (;).
+✅ PASO 1: PROCESAMIENTO DEL ARCHIVO PRINCIPAL
+- Extraer número entre "RM" y "|" en la Columna A → campo NUMERO_RM (int64).
+- Extraer número entre { y } en la Columna E → campo PRIORIDAD.
+- Conservar columnas:
+  - C → Asignado
+  - D → Proyecto
+  - F → Estado TRELLO
+  - A (original completo) para uso posterior.
 
-Contiene:
+✅ PASO 2: CRUCE CON ISSUES.CSV
+- Relacionar NUMERO_RM (archivo principal) con "#" (issues.csv) en formato int64.
+- Incorporar columnas desde issues.csv:
+  - Estado
+  - Asignado a
+  - Asunto
 
-Un identificador numérico (formato int64), que debe coincidir con el número extraído de la Columna A del archivo principal.
+✅ PASO 3: GENERACIÓN DE ARCHIVO EXCEL CONSOLIDADO
+- Crear un archivo .xlsx con columnas:
 
-Columnas adicionales: "Estado", "Asignado a" y "Asunto".
+  | COLUMNA        | CONTENIDO                                                                 |
+  |----------------|---------------------------------------------------------------------------|
+  | ASIGNADO A     | De columna C, eliminar texto entre paréntesis (inclusive), en mayúsculas |
+  | PRIORIDAD      | Número extraído de la Columna E                                           |
+  | PROYECTO       | Contenido de la Columna D                                                 |
+  | ESTADO TRELLO  | Contenido de la Columna F                                                 |
+  | NUMERO RM      | Número extraído de Columna A                                              |
+  | ASUNTO         | Desde issues.csv (o contenido de Columna A si PROYECTO = "Tablero de Control") |
 
-⚙️ Consideraciones técnicas
-Los números extraídos de la Columna A del archivo principal deben convertirse de texto a formato  numero (int64) antes de compararlos con issues.csv.
-
-En caso de error de codificación al leer los archivos, intentar con las siguientes codificaciones:
-
-"utf-8-sig"
-
-"latin1"
-
-🔄 Proceso detallado
-✅ Paso 1: Procesamiento del archivo principal
-Extraer el número entre "RM" y "|" de la Columna A.
-
-Extraer el número entre { y } de la Columna E.
-
-Conservar el contenido completo de las Columnas C, D y F, manteniendo sus encabezados.
-
-Conservar el texto completo original de la Columna A para uso posterior.
-
-✅ Paso 2: Cruce de información con issues.csv
-Usar el número extraído de la Columna A como clave de búsqueda.
-
-Para cada coincidencia, extraer los valores de:
-
-"Estado"
-
-"Asignado a"
-
-"Asunto"
-
-✅ Paso 3: Generación del archivo Excel consolidado
-Crear un archivo .xlsx con las siguientes columnas y encabezados:
-
-Columna	Contenido
-A	Contenido de la Columna C del archivo principal (Asignado A), transformado:
-• Eliminar cualquier texto entre paréntesis () inclusive
-• Convertir todo el texto a mayúsculas
-B	Número extraído de la Columna E (PRIORIDAD)
-C	Contenido de la Columna D (Proyecto)
-D	Contenido de la Columna F (Estado TRELLO)
-E	Número extraído de la Columna A (Número RM)
-F	Valor de la columna "Asunto" desde issues.csv
-Los títulos de columna deben estar en MAYÚSCULAS, negrita, y con fondo gris claro.
-
-Ordenar el archivo final por las columnas (en este orden):
-
-Asignado A
-
-Prioridad
-
-Proyecto
-
-Estado TRELLO
-
-Insertar una fila en blanco cada vez que cambie el valor de la columna Asignado A, para mejorar la visualización.
-
-📌 Reglas adicionales
-Si la columna "Proyecto" tiene el valor "Tablero de Control", completar la columna "Asunto" con el contenido original de la Columna A del archivo principal.
-
-Si un registro no tiene valor en la columna "Asunto":
-
-Resaltar toda la fila en amarillo.
-
-Completar la celda de Asunto con el texto: "RM CERREDO".
+- Encabezados en MAYÚSCULAS, negrita, fondo gris claro.
+- Ordenar por: ASIGNADO A, PRIORIDAD, PROYECTO, ESTADO TRELLO.
+- Insertar una fila en blanco cada vez que cambie ASIGNADO A.
+- Si ASUNTO está vacío:
+  - Completar con "RM CERREDO"
+  - Resaltar toda la fila en amarillo.
