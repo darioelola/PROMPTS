@@ -180,4 +180,6 @@ Un archivo Excel (.xlsx) generado con la estructura anterior, correctamente comb
 
   ...con color **rojo**.
 
+IMPORTANTE: Realiza el proceso de principio a fin, hasta llegar a la generacion de del archivo .xlsx para descargar sin consultarme. No omitas ninguna de las intrucciones anteriores... Revisa y asegurate que se aplique todo.
+
   
