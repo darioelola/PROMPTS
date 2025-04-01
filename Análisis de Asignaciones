@@ -1,6 +1,6 @@
 📁 Archivos involucrados
 1. Archivo principal
-El nombre del archivo es una cadena numérica (por ejemplo: 123456.csv).
+El nombre del archivo es una cadena numérica (por ejemplo: 123456.csv). asegurate de poder leer el archivo... convertilo a lo que te sea necesario para poder procesarolo.
 
 Delimitado por comas (,).
 
