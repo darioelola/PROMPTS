@@ -58,3 +58,5 @@
 - Si ASUNTO está vacío:
   - Completar con "RM CERREDO"
   - Resaltar toda la fila en amarillo.
+- Si el proyecto es TABLERO DE CONTROL, completar la columna asuento ASUNTO (del archivo final) con el contenido de la columna name del archivo principal
+
