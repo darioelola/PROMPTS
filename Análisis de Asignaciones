@@ -46,7 +46,7 @@ Conservar el encabezado original de la Columna A.
 Extraer también el contenido completo de las columnas C, D, y F con sus respectivos encabezados.
 
 ✅ Paso 2: Cruce con issues.csv
-Utilizar los números extraídos como clave de búsqueda.
+Utilizar los números de la  extraídos Columna A del archivo principal como clave de búsqueda.
 
 Por cada coincidencia en issues.csv, obtener:
 
