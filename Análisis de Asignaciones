@@ -91,9 +91,8 @@ Recurso 2
 
 Recurso 3
 
-Si la columna "Proyecto", dice "Tablero de Control", esntonces completar la Columna "Asunto" con el contenido de la Columna A del archivo principal
+Si la columna "Proyecto", dice "Tablero de Control", entonces completar la Columna "Asunto" con el contenido de la Columna A del archivo principal
 
-Si en un registro la columna **"Asunto"** esta vacia: a toda la final resaltada en amarillo. la celda de la columna Asunto (de esa fila) completalo con el texto "RM CERREDO".
+Si en un registro la columna **"Asunto"** esta vacía: a toda la final resaltada en amarillo. la celda de la columna Asunto (de esa fila) complétalo con el texto "RM CERREDO".
 
 El texto de la columna 
-
