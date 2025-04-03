@@ -60,3 +60,92 @@
   - Resaltar toda la fila en amarillo.
 - Si el proyecto es TABLERO DE CONTROL, completar la columna asuento ASUNTO (del archivo final) con el contenido de la columna name del archivo principal
 
+SUNO UN COGO DE PYTHON CON EL PROCESO QUE SE DEBERIA HACER: 
+import pandas as pd
+import numpy as np
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill
+
+def procesar_reportes(archivo_principal, archivo_issues, salida_excel):
+    # Leer archivos con codificaciones alternativas
+    def leer_csv_codificado(path, sep):
+        for encoding in ["utf-8-sig", "latin1"]:
+            try:
+                return pd.read_csv(path, sep=sep, encoding=encoding)
+            except Exception:
+                continue
+        raise ValueError(f"No se pudo leer el archivo: {path}")
+
+    df_principal = leer_csv_codificado(archivo_principal, sep=",")
+    df_issues = leer_csv_codificado(archivo_issues, sep=";")
+
+    # Extraer datos necesarios del archivo principal
+    df_principal["NUMERO_RM"] = df_principal["Name"].str.extract(r"RM\s*(\d+)\s*\|")[0]
+    df_principal["NUMERO_RM"] = pd.to_numeric(df_principal["NUMERO_RM"], errors="coerce").astype("Int64")
+    df_principal["PRIORIDAD"] = df_principal["labels"].str.extract(r"\{\s*(\d+)\s*\}")[0]
+    df_principal = df_principal.rename(columns={
+        "assigned": "ASIGNADO",
+        "board": "PROYECTO",
+        "list": "ESTADO_TRELLO"
+    })
+
+    # Procesar archivo de issues
+    df_issues["#"] = pd.to_numeric(df_issues["#"], errors="coerce").astype("Int64")
+
+    # Cruce de archivos
+    df_combinado = pd.merge(df_principal, df_issues, how="left", left_on="NUMERO_RM", right_on="#")
+
+    # Preparar columnas finales
+    df_combinado["ASIGNADO A"] = df_combinado["ASIGNADO"].str.replace(r"\s*\(.*?\)", "", regex=True).str.upper()
+    df_combinado["ASUNTO_FINAL"] = np.where(
+        (df_combinado["Asunto"].isna()) & (df_combinado["PROYECTO"].str.upper() == "TABLERO DE CONTROL"),
+        df_combinado["Name"],
+        df_combinado["Asunto"]
+    )
+    df_combinado["ASUNTO_FINAL"] = df_combinado["ASUNTO_FINAL"].fillna("RM CERREDO")
+
+    # Seleccionar y renombrar columnas
+    df_final = df_combinado[[
+        "ASIGNADO A", "PRIORIDAD", "PROYECTO", "ESTADO_TRELLO", "NUMERO_RM", "ASUNTO_FINAL"
+    ]].rename(columns={
+        "ESTADO_TRELLO": "ESTADO TRELLO",
+        "NUMERO_RM": "NUMERO RM",
+        "ASUNTO_FINAL": "ASUNTO"
+    })
+
+    # Ordenar
+    df_final = df_final.sort_values(by=["ASIGNADO A", "PRIORIDAD", "PROYECTO", "ESTADO TRELLO"])
+
+    # Convertir a string para evitar errores al escribir en Excel
+    df_final_str = df_final.astype(str).replace({"<NA>": ""})
+
+    # Crear archivo Excel
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Consolidado"
+
+    header_font = Font(bold=True)
+    header_fill = PatternFill(start_color="D9D9D9", end_color="D9D9D9", fill_type="solid")
+    yellow_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
+
+    # Escribir encabezados con estilo
+    ws.append(df_final_str.columns.tolist())
+    for cell in ws[1]:
+        cell.font = header_font
+        cell.fill = header_fill
+
+    previous_assigned = None
+    for _, row in df_final_str.iterrows():
+        if previous_assigned and row["ASIGNADO A"] != previous_assigned:
+            ws.append([""] * len(df_final_str.columns))
+        ws.append(row.tolist())
+        if row["ASUNTO"] == "RM CERREDO":
+            for cell in ws[ws.max_row]:
+                cell.fill = yellow_fill
+        previous_assigned = row["ASIGNADO A"]
+
+    # Guardar archivo Excel
+    wb.save(salida_excel)
+
+# Ejemplo de uso:
+# procesar_reportes("ruta/al/archivo_principal.csv", "ruta/al/issues.csv", "salida/Reporte_Consolidado.xlsx")
