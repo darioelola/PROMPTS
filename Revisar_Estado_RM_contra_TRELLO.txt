@@ -180,6 +180,26 @@ Un archivo Excel (.xlsx) generado con la estructura anterior, correctamente comb
 
   ...con color **rojo**.
 
+Nuevo criterio agregado (además de los ya existentes):
+
+Si la columna "Asunto" está vacía, entonces:
+
+Rellenar toda la fila correspondiente de las columnas:
+
+Número RM
+
+Estado TRELLO
+
+Estado RM
+
+Asignado a
+
+Asunto
+
+...con color amarillo.
+
+
+
 IMPORTANTE: Realiza el proceso de principio a fin, hasta llegar a la generacion de del archivo .xlsx para descargar sin consultarme. No omitas ninguna de las intrucciones anteriores... Revisa y asegurate que se aplique todo.
 
 SUMO EJEMPLO DEL PAYTHON CON EL PROCESO:
@@ -273,9 +293,10 @@ for i, row in enumerate(ws.iter_rows(min_row=2, max_row=ws.max_row), start=2):
     estado_trello = str(row[1].value or "")
     estado_rm = str(row[2].value or "").lower()
     asignado = str(row[3].value or "")
+    asunto = str(row[4].value or "")
 
-    # Condición: Estado RM vacío -> Amarillo
-    if not row[2].value:
+    # Condición: Estado RM vacío o Asunto vacío -> Amarillo
+    if not row[2].value or not row[4].value:
         for cell in row:
             cell.fill = yellow_fill
         continue
@@ -308,6 +329,3 @@ for i, row in enumerate(ws.iter_rows(min_row=2, max_row=ws.max_row), start=2):
 output_path = 'consolidado_rm.xlsx'
 wb.save(output_path)
 print(f"Archivo generado: {output_path}")
-
-
-  
