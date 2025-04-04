@@ -66,33 +66,14 @@ D	Valor de la columna "Asignado a" desde issues.csv (Nombre en Excel: Asignado a
 E	Valor de la columna "Asunto" desde issues.csv (Nombre en Excel: Asunto)
 🎨 Formato y resaltado condicional en Excel
 
-Si una celda en la columna "Estado RM" está vacía, rellená toda la fila correspondiente de las columnas:
+- Encabezados en MAYÚSCULAS, negrita, fondo gris claro.
+- Si ASUNTO está vacío:
+  - Completar con "RM CERREDO"
+  - Resaltar toda la fila en amarillo.
 
-Número RM
-
-Estado TRELLO
-
-Estado RM
-
-Asignado a
-
-Asunto
-
-...con color amarillo.
-
-Si una celda en la columna "Asunto" está vacía (es decir que no encotro registro en issues para ese numero de RM , rellená toda la fila correspondiente de las columnas:
-
-Número RM
-
-Estado TRELLO
-
-Estado RM
-
-Asignado a
-
-Asunto
-
-...con color amarillo.
+- Si "Estado RM está vacío:
+  - Completar con "RM CERREDO"
+  - Resaltar toda la fila en amarillo.
 
 Si una fila cumple con las siguientes dos condiciones simultáneamente:
 
@@ -203,94 +184,107 @@ SUMO EJEMPLO DEL PAYTHON CON EL PROCESO:
 import pandas as pd
 import re
 from openpyxl import Workbook
-from openpyxl.styles import PatternFill
+from openpyxl.styles import Font, PatternFill
 from openpyxl.utils.dataframe import dataframe_to_rows
+from openpyxl.styles.colors import Color
 
-# Intentar abrir los archivos con múltiples codificaciones
-def read_csv_with_encoding_fallback(filepath, delimiter):
-    encodings = ["utf-8", "utf-8-sig", "latin1"]
-    for enc in encodings:
+# Intentar leer los archivos con diferentes codificaciones
+def read_file(filepath, sep, encodings=['utf-8', 'utf-8-sig', 'latin1']):
+    for encoding in encodings:
         try:
-            return pd.read_csv(filepath, delimiter=delimiter, encoding=enc)
+            return pd.read_csv(filepath, sep=sep, encoding=encoding)
         except Exception:
             continue
-    raise ValueError(f"No se pudo leer el archivo {filepath} con las codificaciones esperadas.")
+    raise Exception(f"No se pudo leer el archivo: {filepath}")
 
-# Cargar archivos
-archivo_principal = read_csv_with_encoding_fallback("/mnt/data/123456.csv", ",")
-archivo_issues = read_csv_with_encoding_fallback("/mnt/data/issues.csv", ";")
+# Leer archivo principal
+main_file = read_file('/mnt/data/123456.csv', sep=',')
 
-# Paso 1: Extracción de números RM y columna D
-archivo_principal["Número RM"] = archivo_principal.iloc[:, 0].str.extract(r"RM(\d+)\|")[0].astype("Int64")
-archivo_principal["Estado TRELLO"] = archivo_principal.iloc[:, 3]
+# Extraer número entre "RM" y "|"
+main_file['Número RM'] = main_file.iloc[:, 0].str.extract(r'RM\s*(\d+)\s*\|')
+main_file['Número RM'] = pd.to_numeric(main_file['Número RM'], errors='coerce')
 
-# Paso 2: Cruce con issues.csv
-archivo_issues["Número RM"] = archivo_issues.iloc[:, 0].astype("Int64")
+# Extraer columna D como 'Estado TRELLO'
+main_file['Estado TRELLO'] = main_file.iloc[:, 3]
 
-df_merged = pd.merge(
-    archivo_principal[["Número RM", "Estado TRELLO"]],
-    archivo_issues,
-    how="left",
-    on="Número RM"
-)
+# Leer archivo issues.csv
+issues_file = read_file('/mnt/data/issues.csv', sep=';')
 
-# Selección y renombramiento de columnas
-df_final = df_merged[["Número RM", "Estado TRELLO", "Estado", "Asignado a", "Asunto"]].copy()
-df_final.columns = ["Número RM", "Estado TRELLO", "Estado RM", "Asignado a", "Asunto"]
+# Convertir columna clave en issues.csv a int64
+issues_file.iloc[:, 0] = pd.to_numeric(issues_file.iloc[:, 0], errors='coerce')
 
-# Paso 3: Crear archivo Excel con formato
+# Renombrar columnas para facilitar merge
+issues_file.columns = ['Número RM', 'Estado RM', 'Asignado a', 'Asunto']
+
+# Unir los dataframes
+merged_df = pd.merge(main_file[['Número RM', 'Estado TRELLO']], issues_file, on='Número RM', how='left')
+
+# Completar valores vacíos
+merged_df['Estado RM'].fillna("RM CERREDO", inplace=True)
+merged_df['Asunto'].fillna("RM CERREDO", inplace=True)
+
+# Crear archivo Excel con estilos
 wb = Workbook()
 ws = wb.active
 ws.title = "Consolidado"
 
-# Agregar encabezado y datos
-for r in dataframe_to_rows(df_final, index=False, header=True):
-    ws.append(r)
+# Encabezados
+headers = ['Número RM', 'Estado TRELLO', 'Estado RM', 'Asignado a', 'Asunto']
+ws.append(headers)
 
-# Definir colores
-amarillo = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
-rojo = PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")
+# Aplicar estilo a encabezados
+header_fill = PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid")
+header_font = Font(bold=True)
+for col in range(1, len(headers) + 1):
+    cell = ws.cell(row=1, column=col)
+    cell.font = header_font
+    cell.fill = header_fill
 
-# Definiciones para reglas
-nombres_rojo = [
+# Definir reglas para resaltar en rojo
+estado_trello_cond1 = [
+    "04 En Desarrollo | STAND BY",
+    "05 En Desarrollo | EN CURSO",
+    "07 En Prueba QA | BACKLOG",
+    "08 En Prueba QA | EN CURSO",
+    "10 Solicitud de Pasaje a PROD."
+]
+
+asignados_cond1 = [
     "Dario Elola", "Nelson Daniel Bordón", "Valentina Juszkiewicz", "Renzo Antonioli",
     "Lucas Gutierrez", "Vanina Zylberg", "Carolina Noemi Gualdi", "Franchesca Gabriela Rivas Veliz"
 ]
 
-estados_trello_rojo = [
-    "04 En Desarrollo | STAND BY", "05 En Desarrollo | EN CURSO",
-    "07 En Prueba QA | BACKLOG", "08 En Prueba QA | EN CURSO",
-    "10 Solicitud de Pasaje a PROD."
-]
+# Colores
+yellow_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
+red_fill = PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")
 
-# Aplicar reglas de formato
-for row in ws.iter_rows(min_row=2, max_row=ws.max_row, max_col=5):
-    num_rm, estado_trello, estado_rm, asignado, asunto = [cell.value for cell in row]
-    row_fill = None
+# Cargar datos con formato condicional
+for index, row in merged_df.iterrows():
+    estado_trello = str(row['Estado TRELLO'])
+    estado_rm = str(row['Estado RM'])
+    asignado_a = str(row['Asignado a'])
+    asunto = str(row['Asunto'])
 
-    # Regla 1: Estado RM o Asunto vacío
-    if not estado_rm or not asunto:
-        row_fill = amarillo
+    values = [row['Número RM'], estado_trello, estado_rm, asignado_a, asunto]
+    ws.append(values)
 
-    # Reglas avanzadas con rojo
-    if estado_trello in estados_trello_rojo and asignado in nombres_rojo:
-        row_fill = rojo
+    row_idx = ws.max_row
+    apply_yellow = (asunto == "RM CERREDO") or (estado_rm == "RM CERREDO")
+    apply_red = (
+        (estado_trello in estado_trello_cond1 and asignado_a in asignados_cond1)
+        or (estado_trello == "05 En Desarrollo | EN CURSO" and "desarrollo" not in estado_rm.lower())
+        or (estado_trello != "05 En Desarrollo | EN CURSO" and "desarrollo" in estado_rm.lower())
+        or (estado_trello == "04 En Desarrollo | STAND BY" and "stand by" not in estado_rm.lower())
+    )
 
-    if estado_trello == "05 En Desarrollo | EN CURSO" and estado_rm and "desarrollo" not in estado_rm.lower():
-        row_fill = rojo
+    fill = red_fill if apply_red else yellow_fill if apply_yellow else None
 
-    if estado_trello != "05 En Desarrollo | EN CURSO" and estado_rm and "desarrollo" in estado_rm.lower():
-        row_fill = rojo
+    if fill:
+        for col in range(1, 6):
+            ws.cell(row=row_idx, column=col).fill = fill
 
-    if estado_trello == "04 En Desarrollo | STAND BY" and estado_rm and "stand by" not in estado_rm.lower():
-        row_fill = rojo
-
-    if row_fill:
-        for cell in row:
-            cell.fill = row_fill
-
-# Guardar archivo
-output_path = "/mnt/data/consolidado_RM.xlsx"
+# Guardar el archivo
+output_path = "/mnt/data/consolidado_resultado.xlsx"
 wb.save(output_path)
 
 output_path
