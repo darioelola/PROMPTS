@@ -73,7 +73,7 @@ I  Completar con la cadena de "prioridad" [ PRIORIDAD 0X ] o ALTA , BAJA ETC, en
 
 Las columnas F, G y H centrar el contenido
 
-🎨 Formato y resaltado condicional en Excel
+🎨 Formato y resaltado condicional en Excel (aplicar el formato desde la columna "A" hasta la "I" 
 
 - Encabezados en MAYÚSCULAS, negrita, fondo gris claro.
 - Si ASUNTO está vacío:
