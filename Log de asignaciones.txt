@@ -1,0 +1,31 @@
+📤 Prompt diario para actualizar el log:
+Hola, te adjunto el Excel actualizado del día y el log del día anterior.
+Por favor, agregá al log las novedades:
+
+Nuevos registros (RM + ASIGNADO A no estaban en el log anterior).
+
+Registros eliminados.
+
+Registros modificados, indicando todos los campos que cambiaron con su valor anterior y nuevo.
+
+Considerá como clave primaria la combinación de:
+
+NUMERO RM
+
+ASIGNADO A
+
+Compará todos los campos del Excel en la detección de cambios:
+
+ASIGNADO A
+
+PRIORIDAD
+
+PROYECTO
+
+ESTADO TRELLO
+
+NUMERO RM
+
+ASUNTO
+
+Generá el nuevo log en formato .txt con la misma estructura usada hasta ahora.
