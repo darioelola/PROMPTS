@@ -1,0 +1,256 @@
+FECHA LOG: 2025-04-07
+NUMERO RM: 130300.0
+ASIGNADO A: CAROLINA GUALDI
+PRIORIDAD: nan
+PROYECTO: OBSBA
+ESTADO TRELLO: 03 En Análisis | EN CURSO ###
+ASUNTO: Cierre de Balance 2024- Fecha de Impacto NC y NB
+----------------------------------------
+FECHA LOG: 2025-04-07
+NUMERO RM: 130360.0
+ASIGNADO A: CAROLINA GUALDI
+PRIORIDAD: nan
+PROYECTO: OBSBA
+ESTADO TRELLO: 03 En Análisis | EN CURSO ###
+ASUNTO: Cambio de Nro AFIP- Sanatorio
+----------------------------------------
+FECHA LOG: 2025-04-07
+NUMERO RM: 130866.0
+ASIGNADO A: CAROLINA GUALDI
+PRIORIDAD: nan
+PROYECTO: OBSBA
+ESTADO TRELLO: 03 En Análisis | EN CURSO ###
+ASUNTO: Cambio de Ente Carpeta 71890/24 Fdo Compensador
+----------------------------------------
+FECHA LOG: 2025-04-07
+NUMERO RM: 132810.0
+ASIGNADO A: CAROLINA GUALDI
+PRIORIDAD: nan
+PROYECTO: OBSBA
+ESTADO TRELLO: 03 En Análisis | EN CURSO ###
+ASUNTO: Cambio de Ente - Facturas
+----------------------------------------
+FECHA LOG: 2025-04-07
+NUMERO RM: 128819.0
+ASIGNADO A: CAROLINA GUALDI
+PRIORIDAD: nan
+PROYECTO: OBSBA
+ESTADO TRELLO: 06 En Prueba Func. | EN CURSO
+ASUNTO: Planta Valorizada RRHH Error OP no esta tomando el objeto del gasto 1390
+----------------------------------------
+FECHA LOG: 2025-04-07
+NUMERO RM: 91676.0
+ASIGNADO A: CAROLINA GUALDI
+PRIORIDAD: nan
+PROYECTO: OBSBA
+ESTADO TRELLO: 06 En Prueba Func. | EN CURSO
+ASUNTO: Report/PDF Nota de Crédito
+----------------------------------------
+FECHA LOG: 2025-04-07
+NUMERO RM: nan
+ASIGNADO A: CAROLINA GUALDI
+PRIORIDAD: nan
+PROYECTO: TABLERO DE CONTROL
+ESTADO TRELLO: Carlina Gualdi
+ASUNTO: Prueba de Planta Valorizada en WebLogic
+----------------------------------------
+FECHA LOG: 2025-04-07
+NUMERO RM: nan
+ASIGNADO A: CAROLINA GUALDI
+PRIORIDAD: nan
+PROYECTO: TABLERO DE CONTROL
+ESTADO TRELLO: Carlina Gualdi
+ASUNTO: C55 de Fondos - pedir definición
+----------------------------------------
+FECHA LOG: 2025-04-07
+NUMERO RM: nan
+ASIGNADO A: CAROLINA GUALDI
+PRIORIDAD: nan
+PROYECTO: TABLERO DE CONTROL
+ESTADO TRELLO: Carlina Gualdi
+ASUNTO: Probar Tablero
+----------------------------------------
+FECHA LOG: 2025-04-07
+NUMERO RM: 129555.0
+ASIGNADO A: DANIEL BORDON
+PRIORIDAD: 1.0
+PROYECTO: CIUDAD
+ESTADO TRELLO: 03 En Análisis | EN CURSO ###
+ASUNTO:  CIERRE CUENTA DE INVERSIÓN 2024 | Solicitud de impacto asientos en DEVENGADOS de C42
+----------------------------------------
+FECHA LOG: 2025-04-07
+NUMERO RM: 129966.0
+ASIGNADO A: DANIEL BORDON
+PRIORIDAD: 2.0
+PROYECTO: CIUDAD
+ESTADO TRELLO: 03 En Análisis | EN CURSO ###
+ASUNTO: CIERRE CUENTA DE INVERSIÓN 2024 | SIGAF | Inconveniente en impacto contable de C44 N°2410/24
+----------------------------------------
+FECHA LOG: 2025-04-07
+NUMERO RM: 131567.0
+ASIGNADO A: DANIEL BORDON
+PRIORIDAD: 3.0
+PROYECTO: CIUDAD
+ESTADO TRELLO: 03 En Análisis | EN CURSO ###
+ASUNTO: SIGAF | CIERRE CUENTA DE INVERSIÓN 2024 | Inconvenientes con OP C41: 493847/24 IVC  (Relación RM #127138)
+----------------------------------------
+FECHA LOG: 2025-04-07
+NUMERO RM: 131076.0
+ASIGNADO A: DANIEL BORDON
+PRIORIDAD: 4.0
+PROYECTO: CIUDAD
+ESTADO TRELLO: 03 En Análisis | EN CURSO ###
+ASUNTO: SIGAF | CI 2024 // Asientos PAG erróneos
+----------------------------------------
+FECHA LOG: 2025-04-07
+NUMERO RM: 130301.0
+ASIGNADO A: DARIO JAVIER ELOLA
+PRIORIDAD: nan
+PROYECTO: CIUDAD
+ESTADO TRELLO: 03 En Análisis | EN CURSO ###
+ASUNTO: CIERRE CUENTA DE INVERSIÓN 2024 | Conciliación Libro Banco - Contabilidad CUT | Pagos Banco
+----------------------------------------
+FECHA LOG: 2025-04-07
+NUMERO RM: 132470.0
+ASIGNADO A: DARIO JAVIER ELOLA
+PRIORIDAD: nan
+PROYECTO: CIUDAD
+ESTADO TRELLO: 03 En Análisis | EN CURSO ###
+ASUNTO: CIERRE CUENTA DE INVERSIÓN 2024 | SIGAF | Corrección de asientos  de formularios C55 con errores
+----------------------------------------
+FECHA LOG: 2025-04-07
+NUMERO RM: 132628.0
+ASIGNADO A: DARIO JAVIER ELOLA
+PRIORIDAD: nan
+PROYECTO: CIUDAD
+ESTADO TRELLO: 03 En Análisis | EN CURSO ###
+ASUNTO: CIERRE CUENTA DE INVERSIÓN 2024 | SIGAF | Inconveniente con Asiento contable del C55 14896/2024
+----------------------------------------
+FECHA LOG: 2025-04-07
+NUMERO RM: 130159.0
+ASIGNADO A: DARIO JAVIER ELOLA
+PRIORIDAD: nan
+PROYECTO: OBSBA
+ESTADO TRELLO: 02 En Análisis | BACKLOG ###
+ASUNTO: ADECUAR FORMATO LIBRO DIARIO  EN PDF
+----------------------------------------
+FECHA LOG: 2025-04-07
+NUMERO RM: 128909.0
+ASIGNADO A: DARIO JAVIER ELOLA
+PRIORIDAD: nan
+PROYECTO: OBSBA
+ESTADO TRELLO: 03 En Análisis | EN CURSO ###
+ASUNTO: Solicitud de Barrido de Gestiones SIGAF 2024 y 2025
+----------------------------------------
+FECHA LOG: 2025-04-07
+NUMERO RM: nan
+ASIGNADO A: DARIO JAVIER ELOLA
+PRIORIDAD: nan
+PROYECTO: TABLERO DE CONTROL
+ESTADO TRELLO: Dario Elola
+ASUNTO: Armar listado de RM Cuenta de Inversión con detalle de resolución
+----------------------------------------
+FECHA LOG: 2025-04-07
+NUMERO RM: nan
+ASIGNADO A: DARIO JAVIER ELOLA
+PRIORIDAD: nan
+PROYECTO: TABLERO DE CONTROL
+ESTADO TRELLO: Dario Elola
+ASUNTO: litado de RM de cierre y fechas
+----------------------------------------
+FECHA LOG: 2025-04-07
+NUMERO RM: 132726.0
+ASIGNADO A: FRANCHESCA RIVAS
+PRIORIDAD: 3.0
+PROYECTO: CIUDAD
+ESTADO TRELLO: 03 En Análisis | EN CURSO ###
+ASUNTO: CIERRE CUENTA DE INVERSIÓN 2024 | CI 2024 - OD 210 - Cuenta regularización de montos por retenciones
+----------------------------------------
+FECHA LOG: 2025-04-07
+NUMERO RM: 132275.0
+ASIGNADO A: FRANCHESCA RIVAS
+PRIORIDAD: 4.0
+PROYECTO: CIUDAD
+ESTADO TRELLO: 03 En Análisis | EN CURSO ###
+ASUNTO: Movimientos en AC Cuenta OD 
+----------------------------------------
+FECHA LOG: 2025-04-07
+NUMERO RM: 118102.0
+ASIGNADO A: LUCAS GUTIERREZ
+PRIORIDAD: 1.0
+PROYECTO: CIUDAD
+ESTADO TRELLO: 03 En Análisis | EN CURSO ###
+ASUNTO: CIERRE CUENTA DE INVERSIÓN 2024 | Desafectación de saldos impagos para circuitos C41 con gestión (Compras, Obras, Contratos, etc.)
+----------------------------------------
+FECHA LOG: 2025-04-07
+NUMERO RM: 127976.0
+ASIGNADO A: LUZFLOR
+PRIORIDAD: 1.0
+PROYECTO: CIUDAD
+ESTADO TRELLO: 08 En Prueba QA | EN CURSO
+ASUNTO: CIERRE CUENTA DE INVERSIÓN 2024 | Formulario C 70 OD no hace contabilidad reflejo en AC
+----------------------------------------
+FECHA LOG: 2025-04-07
+NUMERO RM: 53785.0
+ASIGNADO A: LUZFLOR
+PRIORIDAD: 2.0
+PROYECTO: CIUDAD
+ESTADO TRELLO: 08 En Prueba QA | EN CURSO
+ASUNTO: Consulta de pagos Servicios Básicos
+----------------------------------------
+FECHA LOG: 2025-04-07
+NUMERO RM: 122798.0
+ASIGNADO A: LUZFLOR
+PRIORIDAD: 3.0
+PROYECTO: CIUDAD
+ESTADO TRELLO: 08 En Prueba QA | EN CURSO
+ASUNTO: CIERRE CUENTA DE INVERSIÓN 2024 | Diferencia Reg de Monto por Retenciones a MAYO 2024
+----------------------------------------
+FECHA LOG: 2025-04-07
+NUMERO RM: 130217.0
+ASIGNADO A: RENZO ANTONIOLI
+PRIORIDAD: 1.0
+PROYECTO: CIUDAD
+ESTADO TRELLO: 03 En Análisis | EN CURSO ###
+ASUNTO: Generar reporte de Gastos de Telefonía Educación-Hacienda
+----------------------------------------
+FECHA LOG: 2025-04-07
+NUMERO RM: 117065.0
+ASIGNADO A: RENZO ANTONIOLI
+PRIORIDAD: 2.0
+PROYECTO: CIUDAD
+ESTADO TRELLO: 03 En Análisis | EN CURSO ###
+ASUNTO: CIERRE CUENTA DE INVERSIÓN 2024 | Consulta diferencias Listado de Deuda por Beneficiario.
+----------------------------------------
+FECHA LOG: 2025-04-07
+NUMERO RM: 123417.0
+ASIGNADO A: VALENTINA.JUSZKIEWICZ
+PRIORIDAD: 1.0
+PROYECTO: CIUDAD
+ESTADO TRELLO: 03 En Análisis | EN CURSO ###
+ASUNTO: Modificar las retenciones en Servicios Básicos para que maneje pagos parciales
+----------------------------------------
+FECHA LOG: 2025-04-07
+NUMERO RM: 131050.0
+ASIGNADO A: VANI ZYL
+PRIORIDAD: 1.0
+PROYECTO: CIUDAD
+ESTADO TRELLO: 03 En Análisis | EN CURSO ###
+ASUNTO: CIERRE CUENTA DE INVERSIÓN 2024 | Problemas para anular devengados 2024
+----------------------------------------
+FECHA LOG: 2025-04-07
+NUMERO RM: 127895.0
+ASIGNADO A: VANI ZYL
+PRIORIDAD: 2.0
+PROYECTO: CIUDAD
+ESTADO TRELLO: 03 En Análisis | EN CURSO ###
+ASUNTO: CIERRE CUENTA DE INVERSIÓN 2024 | Inconvenientes al generar C55 correcion global: ENM ORA-01422: exact fetch returns more than requested number of rows
+----------------------------------------
+FECHA LOG: 2025-04-07
+NUMERO RM: 132763.0
+ASIGNADO A: VANI ZYL
+PRIORIDAD: 3.0
+PROYECTO: CIUDAD
+ESTADO TRELLO: 03 En Análisis | EN CURSO ###
+ASUNTO: Revision de impactos de 1° trimestre 2025 realizados en Cierre trimestral fase Restringida
+----------------------------------------
