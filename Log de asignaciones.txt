@@ -1,4 +1,4 @@
-📤 Prompt diario para actualizar el log:
+Prompt diario para actualizar el log:
 Hola, te adjunto el Excel actualizado del día y el log del día anterior.
 Por favor, agregá al log las novedades:
 
@@ -28,4 +28,58 @@ NUMERO RM
 
 ASUNTO
 
-Generá el nuevo log en formato .txt con la misma estructura usada hasta ahora.
+Generá el nuevo log en formato .txt con la misma estructura usada hasta ahora. Agregale a cada uno de los registros la fecha en que se genero el log
+
+Python de referencia:
+
+import pandas as pd
+from datetime import datetime
+
+def generar_log_inicial(ruta_excel, ruta_salida_log):
+    """
+    Genera un log inicial en formato .txt a partir de un archivo Excel con columnas específicas.
+    
+    Parámetros:
+    - ruta_excel: str, ruta al archivo Excel (.xlsx)
+    - ruta_salida_log: str, ruta del archivo .txt de salida
+    """
+    # Cargar el archivo Excel
+    df = pd.read_excel(ruta_excel)
+
+    # Definir las columnas relevantes
+    columnas_relevantes = ["ASIGNADO A", "PRIORIDAD", "PROYECTO", "ESTADO TRELLO", "NUMERO RM", "ASUNTO"]
+    df = df[columnas_relevantes]
+
+    # Eliminar filas completamente vacías
+    df.dropna(how='all', inplace=True)
+
+    # Agregar la fecha actual
+    fecha_log = datetime.now().strftime("%Y-%m-%d")
+    df["FECHA LOG"] = fecha_log
+
+    # Construir las líneas del log
+    lineas_log = []
+    for _, fila in df.iterrows():
+        linea = (
+            f"FECHA LOG: {fila['FECHA LOG']}\n"
+            f"NUMERO RM: {fila['NUMERO RM']}\n"
+            f"ASIGNADO A: {fila['ASIGNADO A']}\n"
+            f"PRIORIDAD: {fila['PRIORIDAD']}\n"
+            f"PROYECTO: {fila['PROYECTO']}\n"
+            f"ESTADO TRELLO: {fila['ESTADO TRELLO']}\n"
+            f"ASUNTO: {fila['ASUNTO']}\n"
+            f"{'-'*40}\n"
+        )
+        lineas_log.append(linea)
+
+    # Guardar en archivo de texto
+    with open(ruta_salida_log, "w", encoding="utf-8") as archivo:
+        archivo.writelines(lineas_log)
+
+    print(f"Log inicial generado exitosamente en: {ruta_salida_log}")
+
+# Ejemplo de uso:
+generar_log_inicial(
+    ruta_excel="Reporte_Consolidado (1).xlsx",
+    ruta_salida_log="log_inicial.txt"
+)
