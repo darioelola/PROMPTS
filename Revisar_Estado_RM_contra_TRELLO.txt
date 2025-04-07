@@ -1,4 +1,4 @@
-Solicitud de procesamiento de datos a partir de archivos CSV y generación de archivo Excel consolidado
+A partir de este prompt, armar el cofigo python para realizar este proceso: dejo adjunto un ejemplo de los archivos para que tengas mas referencia: Solicitud de procesamiento de datos a partir de archivos CSV y generación de archivo Excel consolidado
 
 Hola, necesito que proceses dos archivos CSV para generar un nuevo archivo Excel con información combinada. A continuación, detallo todos los pasos que debés seguir cuidadosamente para que el proceso sea exitoso:
 
@@ -44,6 +44,8 @@ Mantené el encabezado original de la columna A.
 
 Extraé también el contenido completo de la Columna D, incluyendo su encabezado.
 
+Extraé también de la Columna C, las cadenas "ROBUSTECIMIENTO" o "CIERRE CUENTA DE INVERSIÓN" o "INCIDENCIA PRODUCTIVA" o "[ PRIORIDAD ... ]" (tener en cuenta qie el numero de la prioridad puede ir variando) Dentro de esta celda cada una de las cadena estan separadas por ",". En caso de encontrar mas de una de las cadenas especificadas en una de las celdas, extraer todas.
+
 ✅ Paso 2: Cruce con issues.csv
 
 Usá los números extraídos de la Columna A como clave de búsqueda para encontrar coincidencias en issues.csv.
@@ -64,6 +66,11 @@ B	Contenido de la Columna D del archivo principal (Nombre en Excel: Estado TRELL
 C	Valor de la columna "Estado" desde issues.csv (Nombre en Excel: Estado RM)
 D	Valor de la columna "Asignado a" desde issues.csv (Nombre en Excel: Asignado a)
 E	Valor de la columna "Asunto" desde issues.csv (Nombre en Excel: Asunto)
+F   Completar con la palabra "SI", en el caso que dentro del Contenido extraido de la Columna D del archivo principal, se haya encontrado la cadena "ROBUSTECIMIENTO". (Nombre en Excel: ROBUSTECIMIENTO)
+G   Completar con la palabra "SI", en el caso que dentro del Contenido extraido de la Columna D del archivo principal, se haya encontrado la cadena "CIERRE CUENTA DE INVERSIÓN". (Nombre en Excel: CIERRE CUENTA DE INVERSIÓN)
+H  Completar con la palabra "SI", en el caso que dentro del Contenido extraido de la Columna D del archivo principal, se haya encontrado la cadena "INCIDENCIA PRODUCTIVA". (Nombre en Excel: INCIDENCIA PRODUCTIVA)
+I  Completar con la cadena de "prioridad" [ PRIORIDAD 0X ], en el caso que dentro del Contenido extraído de la Columna D del archivo principal, se haya encontrado la cadena "[ PRIORIDAD 02 ]". (Nombre en Excel: PRIORIDAD)
+
 🎨 Formato y resaltado condicional en Excel
 
 - Encabezados en MAYÚSCULAS, negrita, fondo gris claro.
@@ -178,113 +185,167 @@ Un archivo Excel (.xlsx) generado con la estructura anterior, correctamente comb
 
 IMPORTANTE: Realiza el proceso de principio a fin, hasta llegar a la generacion de del archivo .xlsx para descargar sin consultarme. No omitas ninguna de las intrucciones anteriores... Revisa y asegurate que se aplique todo.
 
-SUMO EJEMPLO DEL PAYTHON CON EL PROCESO:
 
+SUMO EJEMPLO DEL PAYTHON CON EL PROCESO:
 
 import pandas as pd
 import re
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill
 from openpyxl.utils.dataframe import dataframe_to_rows
-from openpyxl.styles.colors import Color
 
-# Intentar leer los archivos con diferentes codificaciones
-def read_file(filepath, sep, encodings=['utf-8', 'utf-8-sig', 'latin1']):
-    for encoding in encodings:
+# Ruta de los archivos cargados
+main_file_path = "/mnt/data/1744027626670.csv"
+issues_file_path = "/mnt/data/issues.csv"
+
+# Intento de lectura del archivo principal con diferentes codificaciones
+def read_file_with_encodings(filepath, sep, encodings):
+    for enc in encodings:
         try:
-            return pd.read_csv(filepath, sep=sep, encoding=encoding)
+            return pd.read_csv(filepath, sep=sep, encoding=enc)
         except Exception:
             continue
-    raise Exception(f"No se pudo leer el archivo: {filepath}")
+    raise ValueError(f"No se pudo leer el archivo: {filepath}")
 
 # Leer archivo principal
-main_file = read_file('/mnt/data/123456.csv', sep=',')
+main_encodings = ["utf-8", "utf-8-sig", "latin1"]
+main_df = read_file_with_encodings(main_file_path, ",", main_encodings)
 
-# Extraer número entre "RM" y "|"
-main_file['Número RM'] = main_file.iloc[:, 0].str.extract(r'RM\s*(\d+)\s*\|')
-main_file['Número RM'] = pd.to_numeric(main_file['Número RM'], errors='coerce')
+# Leer issues.csv
+issues_encodings = ["utf-8", "utf-8-sig", "latin1"]
+issues_df = read_file_with_encodings(issues_file_path, ";", issues_encodings)
 
-# Extraer columna D como 'Estado TRELLO'
-main_file['Estado TRELLO'] = main_file.iloc[:, 3]
+# Extraer número RM de la columna A
+def extract_rm(text):
+    match = re.search(r"RM\s*(\d+)\s*\|", str(text))
+    return int(match.group(1)) if match else None
 
-# Leer archivo issues.csv
-issues_file = read_file('/mnt/data/issues.csv', sep=';')
+main_df["Número RM"] = main_df.iloc[:, 0].apply(extract_rm)
 
-# Convertir columna clave en issues.csv a int64
-issues_file.iloc[:, 0] = pd.to_numeric(issues_file.iloc[:, 0], errors='coerce')
+# Extraer columna D
+main_df["Estado TRELLO"] = main_df.iloc[:, 3]
 
-# Renombrar columnas para facilitar merge
-issues_file.columns = ['Número RM', 'Estado RM', 'Asignado a', 'Asunto']
+# Extraer etiquetas de interés de la columna C
+def extract_tags(text):
+    tags = {
+        "ROBUSTECIMIENTO": "NO",
+        "CIERRE CUENTA DE INVERSIÓN": "NO",
+        "INCIDENCIA PRODUCTIVA": "NO",
+        "PRIORIDAD": ""
+    }
+    parts = str(text).split(",")
+    for part in parts:
+        part = part.strip()
+        for tag in tags:
+            if tag in part:
+                if tag == "PRIORIDAD":
+                    tags[tag] = part
+                else:
+                    tags[tag] = "SI"
+    return pd.Series([tags["ROBUSTECIMIENTO"], tags["CIERRE CUENTA DE INVERSIÓN"],
+                      tags["INCIDENCIA PRODUCTIVA"], tags["PRIORIDAD"]])
 
-# Unir los dataframes
-merged_df = pd.merge(main_file[['Número RM', 'Estado TRELLO']], issues_file, on='Número RM', how='left')
+main_df[["ROBUSTECIMIENTO", "CIERRE CUENTA DE INVERSIÓN", "INCIDENCIA PRODUCTIVA", "PRIORIDAD"]] = main_df.iloc[:, 2].apply(extract_tags)
 
-# Completar valores vacíos
-merged_df['Estado RM'].fillna("RM CERREDO", inplace=True)
-merged_df['Asunto'].fillna("RM CERREDO", inplace=True)
+# Cruce con issues.csv
+issues_df["Número RM"] = issues_df.iloc[:, 0]
+merged_df = pd.merge(main_df, issues_df, how="left", on="Número RM")
 
-# Crear archivo Excel con estilos
+# Selección y renombrado de columnas
+final_df = merged_df[[
+    "Número RM",
+    "Estado TRELLO",
+    "Estado", 
+    "Asignado a", 
+    "Asunto", 
+    "ROBUSTECIMIENTO", 
+    "CIERRE CUENTA DE INVERSIÓN", 
+    "INCIDENCIA PRODUCTIVA", 
+    "PRIORIDAD"
+]]
+
+final_df.columns = [
+    "Número RM",
+    "Estado TRELLO",
+    "Estado RM",
+    "Asignado a",
+    "Asunto",
+    "ROBUSTECIMIENTO",
+    "CIERRE CUENTA DE INVERSIÓN",
+    "INCIDENCIA PRODUCTIVA",
+    "PRIORIDAD"
+]
+
+# Reemplazar valores faltantes según condiciones
+def check_and_fill(row):
+    if pd.isna(row["Estado RM"]) or pd.isna(row["Asunto"]):
+        row["Estado RM"] = row["Estado RM"] if pd.notna(row["Estado RM"]) else "RM CERREDO"
+        row["Asunto"] = row["Asunto"] if pd.notna(row["Asunto"]) else "RM CERREDO"
+        row["resaltar_amarillo"] = True
+    else:
+        row["resaltar_amarillo"] = False
+    return row
+
+final_df = final_df.apply(check_and_fill, axis=1)
+
+# Reglas de resaltado rojo
+def resaltar_rojo(row):
+    trello_estado = str(row["Estado TRELLO"]).strip().lower()
+    rm_estado = str(row["Estado RM"]).strip().lower()
+    asignado = str(row["Asignado a"]).strip()
+    nombres = [
+        "Dario Elola", "Nelson Daniel Bordón", "Valentina Juszkiewicz",
+        "Renzo Antonioli", "Lucas Gutierrez", "Vanina Zylberg",
+        "Carolina Noemi Gualdi", "Franchesca Gabriela Rivas Veliz"
+    ]
+    
+    if (
+        (row["Estado TRELLO"] in [
+            "04 En Desarrollo | STAND BY", "05 En Desarrollo | EN CURSO",
+            "07 En Prueba QA | BACKLOG", "08 En Prueba QA | EN CURSO",
+            "10 Solicitud de Pasaje a PROD."
+        ] and asignado in nombres)
+        or ("05 En Desarrollo | EN CURSO" in row["Estado TRELLO"] and "desarrollo" not in rm_estado)
+        or ("05 En Desarrollo | EN CURSO" not in row["Estado TRELLO"] and "desarrollo" in rm_estado)
+        or ("04 En Desarrollo | STAND BY" in row["Estado TRELLO"] and "stand by" not in rm_estado)
+    ):
+        return True
+    return False
+
+final_df["resaltar_rojo"] = final_df.apply(resaltar_rojo, axis=1)
+
+# Crear archivo Excel
 wb = Workbook()
 ws = wb.active
-ws.title = "Consolidado"
+ws.title = "Resumen RM"
 
-# Encabezados
-headers = ['Número RM', 'Estado TRELLO', 'Estado RM', 'Asignado a', 'Asunto']
+# Encabezado con formato
+headers = list(final_df.columns[:-2])  # sin columnas de control
 ws.append(headers)
-
-# Aplicar estilo a encabezados
-header_fill = PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid")
 header_font = Font(bold=True)
-for col in range(1, len(headers) + 1):
-    cell = ws.cell(row=1, column=col)
+header_fill = PatternFill(start_color="DDDDDD", end_color="DDDDDD", fill_type="solid")
+for cell in ws[1]:
     cell.font = header_font
     cell.fill = header_fill
 
-# Definir reglas para resaltar en rojo
-estado_trello_cond1 = [
-    "04 En Desarrollo | STAND BY",
-    "05 En Desarrollo | EN CURSO",
-    "07 En Prueba QA | BACKLOG",
-    "08 En Prueba QA | EN CURSO",
-    "10 Solicitud de Pasaje a PROD."
-]
-
-asignados_cond1 = [
-    "Dario Elola", "Nelson Daniel Bordón", "Valentina Juszkiewicz", "Renzo Antonioli",
-    "Lucas Gutierrez", "Vanina Zylberg", "Carolina Noemi Gualdi", "Franchesca Gabriela Rivas Veliz"
-]
-
-# Colores
+# Estilos
 yellow_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
 red_fill = PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")
 
-# Cargar datos con formato condicional
-for index, row in merged_df.iterrows():
-    estado_trello = str(row['Estado TRELLO'])
-    estado_rm = str(row['Estado RM'])
-    asignado_a = str(row['Asignado a'])
-    asunto = str(row['Asunto'])
+# Agregar filas y aplicar formatos
+for _, row in final_df.iterrows():
+    excel_row = [row[col] for col in headers]
+    ws.append(excel_row)
+    current_row = ws.max_row
+    if row["resaltar_amarillo"]:
+        for col in range(1, len(headers) + 1):
+            ws.cell(row=current_row, column=col).fill = yellow_fill
+    elif row["resaltar_rojo"]:
+        for col in range(1, len(headers) + 1):
+            ws.cell(row=current_row, column=col).fill = red_fill
 
-    values = [row['Número RM'], estado_trello, estado_rm, asignado_a, asunto]
-    ws.append(values)
-
-    row_idx = ws.max_row
-    apply_yellow = (asunto == "RM CERREDO") or (estado_rm == "RM CERREDO")
-    apply_red = (
-        (estado_trello in estado_trello_cond1 and asignado_a in asignados_cond1)
-        or (estado_trello == "05 En Desarrollo | EN CURSO" and "desarrollo" not in estado_rm.lower())
-        or (estado_trello != "05 En Desarrollo | EN CURSO" and "desarrollo" in estado_rm.lower())
-        or (estado_trello == "04 En Desarrollo | STAND BY" and "stand by" not in estado_rm.lower())
-    )
-
-    fill = red_fill if apply_red else yellow_fill if apply_yellow else None
-
-    if fill:
-        for col in range(1, 6):
-            ws.cell(row=row_idx, column=col).fill = fill
-
-# Guardar el archivo
-output_path = "/mnt/data/consolidado_resultado.xlsx"
+# Guardar archivo
+output_path = "/mnt/data/archivo_consolidado.xlsx"
 wb.save(output_path)
 
 output_path
