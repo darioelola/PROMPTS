@@ -132,6 +132,14 @@ Asignado a
 
 Asunto
 
+ROBUSTECIMIENTO	
+
+CIERRE CUENTA DE INVERSIÓN	
+
+INCIDENCIA PRODUCTIVA	
+
+PRIORIDAD
+
 ...con color rojo.
 
 📦 Entrega esperada
@@ -153,6 +161,11 @@ Un archivo Excel (.xlsx) generado con la estructura anterior, correctamente comb
   - Estado RM  
   - Asignado a  
   - Asunto  
+  - ROBUSTECIMIENTO	
+  - CIERRE CUENTA DE INVERSIÓN	
+  - INCIDENCIA PRODUCTIVA	
+  -  PRIORIDAD
+
 
   ...con color **rojo**.
 
@@ -169,6 +182,10 @@ Un archivo Excel (.xlsx) generado con la estructura anterior, correctamente comb
   - Estado RM  
   - Asignado a  
   - Asunto  
+  - ROBUSTECIMIENTO	
+  - CIERRE CUENTA DE INVERSIÓN	
+  - INCIDENCIA PRODUCTIVA	
+  -  PRIORIDAD
 
   ...con color **rojo**.
   
@@ -185,6 +202,10 @@ Un archivo Excel (.xlsx) generado con la estructura anterior, correctamente comb
   - Estado RM  
   - Asignado a  
   - Asunto  
+  - ROBUSTECIMIENTO	
+  - CIERRE CUENTA DE INVERSIÓN	
+  - INCIDENCIA PRODUCTIVA	
+  -  PRIORIDAD
 
   ...con color **rojo**.
 
@@ -197,12 +218,12 @@ SUMO EJEMPLO DEL PAYTHON CON EL PROCESO:
 import pandas as pd
 import re
 from openpyxl import Workbook
-from openpyxl.styles import Font, PatternFill, Alignment
+from openpyxl.styles import PatternFill, Font, Alignment
 from openpyxl.utils.dataframe import dataframe_to_rows
 
-# Leer archivos CSV
+# Función para intentar leer CSV con diferentes codificaciones
 def read_csv_with_encoding(file_path, delimiter):
-    encodings = ["utf-8", "utf-8-sig", "latin1"]
+    encodings = ['utf-8', 'utf-8-sig', 'latin1']
     for enc in encodings:
         try:
             return pd.read_csv(file_path, encoding=enc, delimiter=delimiter)
@@ -211,131 +232,92 @@ def read_csv_with_encoding(file_path, delimiter):
     raise ValueError(f"No se pudo leer el archivo: {file_path}")
 
 # Cargar archivos
-file_paths = [
-    "/mnt/data/1744030225155.csv",
-    "/mnt/data/1744032665788.csv",
-    "/mnt/data/issues.csv"
-]
+principal_df = read_csv_with_encoding("123456.csv", ',')
+issues_df = read_csv_with_encoding("issues.csv", ';')
 
-# Procesar archivo principal (puede ser cualquiera de los dos primeros)
-try:
-    main_df = read_csv_with_encoding(file_paths[0], ',')
-    if 'A' not in main_df.columns or 'C' not in main_df.columns or 'D' not in main_df.columns:
-        main_df = read_csv_with_encoding(file_paths[1], ',')
-except Exception as e:
-    raise RuntimeError("Error al leer los archivos principales") from e
+# Extraer números de la columna A entre "RM" y "|"
+principal_df["Número RM"] = principal_df.iloc[:, 0].str.extract(r'RM\s*(\d+)\s*\|')[0]
+principal_df["Número RM"] = pd.to_numeric(principal_df["Número RM"], errors='coerce')
 
-# Leer archivo issues.csv
-issues_df = read_csv_with_encoding(file_paths[2], ';')
+# Extraer columna D y renombrar
+principal_df["Estado TRELLO"] = principal_df.iloc[:, 3]
 
-# Funciones de extracción
-def extract_rm_number(text):
-    match = re.search(r'RM\s*(\d+)\s*\|', str(text))
-    return int(match.group(1)) if match else None
+# Extraer claves de columna C
+columna_c = principal_df.iloc[:, 2].fillna("")
+def extraer_claves(texto):
+    claves = {
+        "ROBUSTECIMIENTO": False,
+        "CIERRE CUENTA DE INVERSIÓN": False,
+        "CIERRE DE BALANCE": False,
+        "INCIDENCIA PRODUCTIVA": False,
+        "PRIORIDAD": []
+    }
 
-def extract_priority(text):
-    priorities = []
-    if pd.isna(text):
-        return ""
-    text = str(text)
-    matches = re.findall(r"\[ PRIORIDAD[^\]]+\]", text, flags=re.IGNORECASE)
-    matches += re.findall(r"\b(ALTA|MEDIA|BAJA)\b", text, flags=re.IGNORECASE)
-    return ", ".join(set(matches))
+    if "ROBUSTECIMIENTO" in texto:
+        claves["ROBUSTECIMIENTO"] = True
+    if "CIERRE CUENTA DE INVERSIÓN" in texto or "CIERRE DE BALANCE" in texto:
+        claves["CIERRE CUENTA DE INVERSIÓN"] = True
+    if "INCIDENCIA PRODUCTIVA" in texto:
+        claves["INCIDENCIA PRODUCTIVA"] = True
 
-def contains_keyword(text, keyword):
-    return "SI" if keyword.lower() in str(text).lower() else "NO"
+    prioridades = re.findall(r'\[ PRIORIDAD [^\]]+\]', texto)
+    prioridades += re.findall(r'\b(ALTA|MEDIA|BAJA|CRÍTICA|URGENTE)\b', texto, flags=re.IGNORECASE)
+    claves["PRIORIDAD"] = prioridades
 
-def contains_any(text, keywords):
-    text = str(text).lower()
-    return any(k.lower() in text for k in keywords)
+    return claves
 
-# Procesar datos
-main_df['Número RM'] = main_df['A'].apply(extract_rm_number)
-main_df['Estado TRELLO'] = main_df['D']
-main_df['ROBUSTECIMIENTO'] = main_df['C'].apply(lambda x: "SI" if contains_any(x, ["ROBUSTECIMIENTO"]) else "NO")
-main_df['CIERRE CUENTA DE INVERSIÓN'] = main_df['C'].apply(lambda x: "SI" if contains_any(x, ["CIERRE CUENTA DE INVERSIÓN", "CIERRE DE BALANCE"]) else "NO")
-main_df['INCIDENCIA PRODUCTIVA'] = main_df['C'].apply(lambda x: "SI" if contains_any(x, ["INCIDENCIA PRODUCTIVA"]) else "NO")
-main_df['PRIORIDAD'] = main_df['C'].apply(extract_priority)
+claves_extraidas = columna_c.apply(extraer_claves)
+principal_df["ROBUSTECIMIENTO"] = claves_extraidas.apply(lambda x: "SI" if x["ROBUSTECIMIENTO"] else "NO")
+principal_df["CIERRE CUENTA DE INVERSIÓN"] = claves_extraidas.apply(lambda x: "SI" if x["CIERRE CUENTA DE INVERSIÓN"] else "NO")
+principal_df["INCIDENCIA PRODUCTIVA"] = claves_extraidas.apply(lambda x: "SI" if x["INCIDENCIA PRODUCTIVA"] else "NO")
+principal_df["PRIORIDAD"] = claves_extraidas.apply(lambda x: ', '.join(set(x["PRIORIDAD"])) if x["PRIORIDAD"] else "")
 
-# Convertir para merge
-issues_df['Número RM'] = issues_df.iloc[:, 0].astype('Int64')
-merged_df = pd.merge(main_df, issues_df, on='Número RM', how='left')
+# Unir con issues.csv
+issues_df['Número RM'] = pd.to_numeric(issues_df.iloc[:, 0], errors='coerce')
+merged = principal_df.merge(issues_df, on='Número RM', how='left')
 
-# Renombrar columnas
-final_df = merged_df[[
-    'Número RM', 'Estado TRELLO', 'Estado', 'Asignado a', 'Asunto',
-    'ROBUSTECIMIENTO', 'CIERRE CUENTA DE INVERSIÓN', 'INCIDENCIA PRODUCTIVA', 'PRIORIDAD'
-]].copy()
-final_df.columns = [
-    'Número RM', 'Estado TRELLO', 'Estado RM', 'Asignado a', 'Asunto',
-    'ROBUSTECIMIENTO', 'CIERRE CUENTA DE INVERSIÓN', 'INCIDENCIA PRODUCTIVA', 'PRIORIDAD'
-]
+# Crear DataFrame final
+final_df = pd.DataFrame({
+    "Número RM": merged["Número RM"],
+    "Estado TRELLO": merged["Estado TRELLO"],
+    "Estado RM": merged["Estado"],
+    "Asignado a": merged["Asignado a"],
+    "Asunto": merged.get("Asunto", "RM CERREDO"),
+    "ROBUSTECIMIENTO": merged["ROBUSTECIMIENTO"],
+    "CIERRE CUENTA DE INVERSIÓN": merged["CIERRE CUENTA DE INVERSIÓN"],
+    "INCIDENCIA PRODUCTIVA": merged["INCIDENCIA PRODUCTIVA"],
+    "PRIORIDAD": merged["PRIORIDAD"]
+})
 
-# Rellenar celdas vacías según reglas
-final_df['Estado RM'].fillna("RM CERREDO", inplace=True)
-final_df['Asunto'].fillna("RM CERREDO", inplace=True)
-for col in ['ROBUSTECIMIENTO', 'CIERRE CUENTA DE INVERSIÓN', 'INCIDENCIA PRODUCTIVA']:
-    final_df[col] = final_df[col].replace("", "NO")
+# Rellenar celdas vacías con valores por defecto
+final_df["Estado RM"].fillna("RM CERREDO", inplace=True)
+final_df["Asunto"].fillna("RM CERREDO", inplace=True)
+final_df["ROBUSTECIMIENTO"].replace("", "NO", inplace=True)
+final_df["CIERRE CUENTA DE INVERSIÓN"].replace("", "NO", inplace=True)
+final_df["INCIDENCIA PRODUCTIVA"].replace("", "NO", inplace=True)
 
-# Guardar como Excel con formato
+# Crear archivo Excel
 wb = Workbook()
 ws = wb.active
 ws.title = "Consolidado"
 
 # Escribir encabezado
-header_fill = PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid")
-bold_font = Font(bold=True)
+header_font = Font(bold=True)
+header_fill = PatternFill(start_color="DDDDDD", end_color="DDDDDD", fill_type="solid")
+center_align = Alignment(horizontal="center", vertical="center")
 
-for r_idx, row in enumerate(dataframe_to_rows(final_df, index=False, header=True), start=1):
-    for c_idx, value in enumerate(row, start=1):
-        cell = ws.cell(row=r_idx, column=c_idx, value=value)
-        if r_idx == 1:
-            cell.font = bold_font
-            cell.fill = header_fill
-        if ws.cell(row=1, column=c_idx).value in ['ROBUSTECIMIENTO', 'CIERRE CUENTA DE INVERSIÓN', 'INCIDENCIA PRODUCTIVA']:
-            cell.alignment = Alignment(horizontal='center')
+for r in dataframe_to_rows(final_df, index=False, header=True):
+    ws.append(r)
 
-# Aplicar reglas de formato condicional (coloreado)
-highlight_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
-highlight_red = PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")
+for cell in ws[1]:
+    cell.font = header_font
+    cell.fill = header_fill
+    cell.alignment = center_align
 
-asignados = [
-    "Dario Elola", "Nelson Daniel Bordón", "Valentina Juszkiewicz", "Renzo Antonioli",
-    "Lucas Gutierrez", "Vanina Zylberg", "Carolina Noemi Gualdi", "Franchesca Gabriela Rivas Veliz"
-]
-estado_trello_relevantes = [
-    "04 En Desarrollo | STAND BY", "05 En Desarrollo | EN CURSO", "07 En Prueba QA | BACKLOG",
-    "08 En Prueba QA | EN CURSO", "10 Solicitud de Pasaje a PROD."
-]
-
-for row in ws.iter_rows(min_row=2, max_row=ws.max_row):
-    estado_trello = row[1].value or ""
-    estado_rm = row[2].value or ""
-    asignado_a = row[3].value or ""
-    asunto = row[4].value or ""
-
-    if asunto == "RM CERREDO" or estado_rm == "RM CERREDO":
-        for cell in row:
-            cell.fill = highlight_fill
-
-    if estado_trello in estado_trello_relevantes and asignado_a in asignados:
-        for i in range(5):  # A-E
-            row[i].fill = highlight_red
-
-    if estado_trello == "05 En Desarrollo | EN CURSO" and "desarrollo" not in estado_rm.lower():
-        for i in range(5):  # A-E
-            row[i].fill = highlight_red
-
-    if estado_trello != "05 En Desarrollo | EN CURSO" and "desarrollo" in estado_rm.lower():
-        for i in range(5):  # A-E
-            row[i].fill = highlight_red
-
-    if estado_trello == "04 En Desarrollo | STAND BY" and "stand by" not in estado_rm.lower():
-        for i in range(5):  # A-E
-            row[i].fill = highlight_red
+# Aplicar centrado a columnas F, G, H
+for row in ws.iter_rows(min_row=2, min_col=6, max_col=8):
+    for cell in row:
+        cell.alignment = center_align
 
 # Guardar archivo
-output_path = "/mnt/data/Consolidado_RM.xlsx"
-wb.save(output_path)
-
-output_path
+wb.save("/mnt/data/archivo_consolidado.xlsx")
