@@ -30,56 +30,114 @@ ASUNTO
 
 Generá el nuevo log en formato .txt con la misma estructura usada hasta ahora. Agregale a cada uno de los registros la fecha en que se genero el log
 
+LOS REGISTROS NUEVOS AGREGALOS AL PRINCIPIO Y AL FINAL SUMA EL CONTENDIDO DEL LOG ANTERIOR ADJUNTO, PARA QUE EL RESULTADO FINAL SEA LA HITORIA COMOLETA
+
 Python de referencia:
 
 import pandas as pd
 from datetime import datetime
 
-def generar_log_inicial(ruta_excel, ruta_salida_log):
-    """
-    Genera un log inicial en formato .txt a partir de un archivo Excel con columnas específicas.
-    
-    Parámetros:
-    - ruta_excel: str, ruta al archivo Excel (.xlsx)
-    - ruta_salida_log: str, ruta del archivo .txt de salida
-    """
-    # Cargar el archivo Excel
-    df = pd.read_excel(ruta_excel)
+# === CONFIGURACIÓN DE ARCHIVOS ===
+excel_path = "Reporte_Consolidado.xlsx"
+log_path = "log_asignaciones_2025_04_07.txt"
+output_path = "log_asignaciones_2025_04_08.txt"
 
-    # Definir las columnas relevantes
-    columnas_relevantes = ["ASIGNADO A", "PRIORIDAD", "PROYECTO", "ESTADO TRELLO", "NUMERO RM", "ASUNTO"]
-    df = df[columnas_relevantes]
+# === CAMPOS DE COMPARACIÓN Y CLAVE PRIMARIA ===
+campos = [
+    "NUMERO RM",
+    "ASIGNADO A",
+    "PRIORIDAD",
+    "PROYECTO",
+    "ESTADO TRELLO",
+    "ASUNTO"
+]
 
-    # Eliminar filas completamente vacías
-    df.dropna(how='all', inplace=True)
+# === CARGA DEL EXCEL ACTUAL ===
+df_actual = pd.read_excel(excel_path)
+df_actual = df_actual[campos].dropna(subset=["NUMERO RM", "ASIGNADO A"], how="all")
+df_actual = df_actual.fillna("nan")
+df_actual["CLAVE"] = df_actual["NUMERO RM"].astype(str) + "|" + df_actual["ASIGNADO A"]
 
-    # Agregar la fecha actual
-    fecha_log = datetime.now().strftime("%Y-%m-%d")
-    df["FECHA LOG"] = fecha_log
+# === PARSEAR EL LOG ANTERIOR ===
+with open(log_path, "r", encoding="utf-8") as file:
+    log_lines = file.read().split("----------------------------------------")
 
-    # Construir las líneas del log
-    lineas_log = []
-    for _, fila in df.iterrows():
-        linea = (
-            f"FECHA LOG: {fila['FECHA LOG']}\n"
-            f"NUMERO RM: {fila['NUMERO RM']}\n"
-            f"ASIGNADO A: {fila['ASIGNADO A']}\n"
-            f"PRIORIDAD: {fila['PRIORIDAD']}\n"
-            f"PROYECTO: {fila['PROYECTO']}\n"
-            f"ESTADO TRELLO: {fila['ESTADO TRELLO']}\n"
-            f"ASUNTO: {fila['ASUNTO']}\n"
-            f"{'-'*40}\n"
-        )
-        lineas_log.append(linea)
+def parse_log_entry(entry):
+    data = {campo: "nan" for campo in campos}
+    for line in entry.strip().splitlines():
+        if ": " in line:
+            key, value = line.split(": ", 1)
+            if key in data:
+                data[key] = value.strip()
+    return data
 
-    # Guardar en archivo de texto
-    with open(ruta_salida_log, "w", encoding="utf-8") as archivo:
-        archivo.writelines(lineas_log)
+log_data = [parse_log_entry(entry) for entry in log_lines if entry.strip()]
+df_log = pd.DataFrame(log_data)
+df_log = df_log.fillna("nan")
+df_log["CLAVE"] = df_log["NUMERO RM"].astype(str) + "|" + df_log["ASIGNADO A"]
 
-    print(f"Log inicial generado exitosamente en: {ruta_salida_log}")
+# === DETECCIÓN DE CAMBIOS ===
+claves_actuales = set(df_actual["CLAVE"])
+claves_anteriores = set(df_log["CLAVE"])
 
-# Ejemplo de uso:
-generar_log_inicial(
-    ruta_excel="Reporte_Consolidado (1).xlsx",
-    ruta_salida_log="log_inicial.txt"
+nuevos = df_actual[df_actual["CLAVE"].isin(claves_actuales - claves_anteriores)]
+eliminados = df_log[df_log["CLAVE"].isin(claves_anteriores - claves_actuales)]
+
+comunes = df_actual[df_actual["CLAVE"].isin(claves_actuales & claves_anteriores)]
+comunes_previos = df_log[df_log["CLAVE"].isin(claves_actuales & claves_anteriores)]
+
+comunes_merged = pd.merge(
+    comunes, comunes_previos,
+    on="CLAVE",
+    suffixes=("_ACTUAL", "_ANTERIOR")
 )
+
+modificados = []
+for _, row in comunes_merged.iterrows():
+    cambios = {}
+    for campo in campos:
+        campo_actual = f"{campo}_ACTUAL"
+        campo_anterior = f"{campo}_ANTERIOR"
+        if str(row[campo_actual]) != str(row[campo_anterior]):
+            cambios[campo] = (row[campo_anterior], row[campo_actual])
+    if cambios:
+        modificados.append((row["CLAVE"], cambios))
+
+# === GENERACIÓN DEL LOG NUEVO ===
+def formatear_registro(row, cambios=None):
+    fecha = datetime.today().strftime("%Y-%m-%d")
+    lineas = [f"FECHA LOG: {fecha}"]
+    for campo in campos:
+        lineas.append(f"{campo}: {row.get(campo, 'nan')}")
+    if cambios:
+        lineas.append("CAMBIOS DETECTADOS:")
+        for campo, (antes, despues) in cambios.items():
+            lineas.append(f"{campo}: '{antes}' → '{despues}'")
+    lineas.append("----------------------------------------")
+    return "\n".join(lineas)
+
+nuevos_txt = "\n".join(formatear_registro(row) for _, row in nuevos.iterrows())
+eliminados_txt = "\n".join(formatear_registro(row) for _, row in eliminados.iterrows())
+modificados_txt = "\n".join(
+    formatear_registro(df_actual[df_actual["CLAVE"] == clave].iloc[0], cambios)
+    for clave, cambios in modificados
+)
+
+with open(log_path, "r", encoding="utf-8") as f:
+    log_anterior = f.read().strip()
+
+log_final = "\n".join([
+    "# REGISTROS NUEVOS",
+    nuevos_txt,
+    "# REGISTROS MODIFICADOS",
+    modificados_txt,
+    "# REGISTROS ELIMINADOS",
+    eliminados_txt,
+    "# HISTORIAL COMPLETO",
+    log_anterior
+])
+
+with open(output_path, "w", encoding="utf-8") as f:
+    f.write(log_final)
+
+print("Log actualizado generado en:", output_path)
