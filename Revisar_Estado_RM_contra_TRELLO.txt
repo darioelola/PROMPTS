@@ -169,11 +169,11 @@ Un archivo Excel (.xlsx) generado con la estructura anterior, correctamente comb
 
   ...con color **rojo**.
 
- Si en un registro la columna **"Estado TRELLO"** NO contiene alguno de estos valores:
+ Si en un registro la columna **"Estado TRELLO"**  contiene alguno de estos valores:
 
   - `05 En Desarrollo | EN CURSO`
 
-  Y en la columna **"Estado RM"** existe cualquier texto que contenga las palabras **"Desarrollo"** (no distingue mayúsculas o minúsculas), entonces:
+  Y en la columna **"Estado RM"** existe cualquier texto que no contenga las palabras **"Desarrollo"** (no distingue mayúsculas o minúsculas), entonces:
 
   Rellená toda la fila correspondiente de las columnas:
 
@@ -217,107 +217,165 @@ SUMO EJEMPLO DEL PAYTHON CON EL PROCESO:
 
 import pandas as pd
 import re
+import os
 from openpyxl import Workbook
-from openpyxl.styles import PatternFill, Font, Alignment
+from openpyxl.styles import Font, PatternFill, Alignment
 from openpyxl.utils.dataframe import dataframe_to_rows
 
-# Función para intentar leer CSV con diferentes codificaciones
+# Función para leer CSV con múltiples intentos de codificación
 def read_csv_with_encoding(file_path, delimiter):
     encodings = ['utf-8', 'utf-8-sig', 'latin1']
-    for enc in encodings:
+    for encoding in encodings:
         try:
-            return pd.read_csv(file_path, encoding=enc, delimiter=delimiter)
+            return pd.read_csv(file_path, delimiter=delimiter, encoding=encoding)
         except Exception:
             continue
-    raise ValueError(f"No se pudo leer el archivo: {file_path}")
+    raise Exception(f"No se pudo leer el archivo {file_path} con codificaciones comunes.")
 
-# Cargar archivos
-principal_df = read_csv_with_encoding("123456.csv", ',')
-issues_df = read_csv_with_encoding("issues.csv", ';')
+# Extracción de número RM de la columna A
+def extract_rm_number(text):
+    match = re.search(r'RM\s*(\d+)\s*\|', str(text))
+    return int(match.group(1)) if match else None
 
-# Extraer números de la columna A entre "RM" y "|"
-principal_df["Número RM"] = principal_df.iloc[:, 0].str.extract(r'RM\s*(\d+)\s*\|')[0]
-principal_df["Número RM"] = pd.to_numeric(principal_df["Número RM"], errors='coerce')
-
-# Extraer columna D y renombrar
-principal_df["Estado TRELLO"] = principal_df.iloc[:, 3]
-
-# Extraer claves de columna C
-columna_c = principal_df.iloc[:, 2].fillna("")
-def extraer_claves(texto):
-    claves = {
-        "ROBUSTECIMIENTO": False,
-        "CIERRE CUENTA DE INVERSIÓN": False,
-        "CIERRE DE BALANCE": False,
-        "INCIDENCIA PRODUCTIVA": False,
-        "PRIORIDAD": []
+# Extracción de palabras clave y prioridades desde Columna C
+def extract_keywords(text):
+    keywords = {
+        'ROBUSTECIMIENTO': 'NO',
+        'CIERRE CUENTA DE INVERSIÓN': 'NO',
+        'CIERRE DE BALANCE': 'NO',
+        'INCIDENCIA PRODUCTIVA': 'NO',
+        'PRIORIDAD': ''
     }
+    text = str(text).upper()
 
-    if "ROBUSTECIMIENTO" in texto:
-        claves["ROBUSTECIMIENTO"] = True
-    if "CIERRE CUENTA DE INVERSIÓN" in texto or "CIERRE DE BALANCE" in texto:
-        claves["CIERRE CUENTA DE INVERSIÓN"] = True
-    if "INCIDENCIA PRODUCTIVA" in texto:
-        claves["INCIDENCIA PRODUCTIVA"] = True
+    if 'ROBUSTECIMIENTO' in text:
+        keywords['ROBUSTECIMIENTO'] = 'SI'
+    if 'CIERRE CUENTA DE INVERSIÓN' in text or 'CIERRE DE BALANCE' in text:
+        keywords['CIERRE CUENTA DE INVERSIÓN'] = 'SI'
+    if 'INCIDENCIA PRODUCTIVA' in text:
+        keywords['INCIDENCIA PRODUCTIVA'] = 'SI'
 
-    prioridades = re.findall(r'\[ PRIORIDAD [^\]]+\]', texto)
-    prioridades += re.findall(r'\b(ALTA|MEDIA|BAJA|CRÍTICA|URGENTE)\b', texto, flags=re.IGNORECASE)
-    claves["PRIORIDAD"] = prioridades
+    prioridad_match = re.findall(r'\[ PRIORIDAD [^\]]+\]|ALTA|MEDIA|BAJA', text)
+    if prioridad_match:
+        keywords['PRIORIDAD'] = ', '.join(prioridad_match)
 
-    return claves
+    return keywords
 
-claves_extraidas = columna_c.apply(extraer_claves)
-principal_df["ROBUSTECIMIENTO"] = claves_extraidas.apply(lambda x: "SI" if x["ROBUSTECIMIENTO"] else "NO")
-principal_df["CIERRE CUENTA DE INVERSIÓN"] = claves_extraidas.apply(lambda x: "SI" if x["CIERRE CUENTA DE INVERSIÓN"] else "NO")
-principal_df["INCIDENCIA PRODUCTIVA"] = claves_extraidas.apply(lambda x: "SI" if x["INCIDENCIA PRODUCTIVA"] else "NO")
-principal_df["PRIORIDAD"] = claves_extraidas.apply(lambda x: ', '.join(set(x["PRIORIDAD"])) if x["PRIORIDAD"] else "")
+# Leer archivos
+main_file = [f for f in os.listdir() if f.endswith('.csv') and f != 'issues.csv'][0]
+df_main = read_csv_with_encoding(main_file, ',')
+df_issues = read_csv_with_encoding('issues.csv', ';')
 
-# Unir con issues.csv
-issues_df['Número RM'] = pd.to_numeric(issues_df.iloc[:, 0], errors='coerce')
-merged = principal_df.merge(issues_df, on='Número RM', how='left')
+# Procesamiento de datos
+df_main['RM'] = df_main.iloc[:, 0].apply(extract_rm_number)
+df_main['Estado TRELLO'] = df_main.iloc[:, 3]
+df_main['Texto Analisis'] = df_main.iloc[:, 2].astype(str)
 
-# Crear DataFrame final
+# Extraer palabras clave
+keywords_data = df_main['Texto Analisis'].apply(extract_keywords)
+keywords_df = pd.DataFrame(keywords_data.tolist())
+
+# Cruce con issues.csv
+df_issues['RM'] = df_issues.iloc[:, 0].astype(int)
+merged = pd.merge(df_main, df_issues, how='left', left_on='RM', right_on='RM')
+
+# Asunto y relleno de valores por defecto
+merged['Asunto'] = merged.get('Asunto', '')
+merged['Asunto'].fillna("RM CERREDO", inplace=True)
+merged['Estado'].fillna("RM CERREDO", inplace=True)
+
+# Completar columnas de "NO" si están vacías
+for col in ['ROBUSTECIMIENTO', 'CIERRE CUENTA DE INVERSIÓN', 'INCIDENCIA PRODUCTIVA']:
+    keywords_df[col] = keywords_df[col].replace('', 'NO')
+
+# Consolidar DataFrame final
 final_df = pd.DataFrame({
-    "Número RM": merged["Número RM"],
-    "Estado TRELLO": merged["Estado TRELLO"],
-    "Estado RM": merged["Estado"],
-    "Asignado a": merged["Asignado a"],
-    "Asunto": merged.get("Asunto", "RM CERREDO"),
-    "ROBUSTECIMIENTO": merged["ROBUSTECIMIENTO"],
-    "CIERRE CUENTA DE INVERSIÓN": merged["CIERRE CUENTA DE INVERSIÓN"],
-    "INCIDENCIA PRODUCTIVA": merged["INCIDENCIA PRODUCTIVA"],
-    "PRIORIDAD": merged["PRIORIDAD"]
+    'Número RM': df_main['RM'],
+    'Estado TRELLO': df_main['Estado TRELLO'],
+    'Estado RM': merged['Estado'],
+    'Asignado a': merged['Asignado a'],
+    'Asunto': merged['Asunto'],
+    'ROBUSTECIMIENTO': keywords_df['ROBUSTECIMIENTO'],
+    'CIERRE CUENTA DE INVERSIÓN': keywords_df['CIERRE CUENTA DE INVERSIÓN'],
+    'INCIDENCIA PRODUCTIVA': keywords_df['INCIDENCIA PRODUCTIVA'],
+    'PRIORIDAD': keywords_df['PRIORIDAD'],
 })
 
-# Rellenar celdas vacías con valores por defecto
-final_df["Estado RM"].fillna("RM CERREDO", inplace=True)
-final_df["Asunto"].fillna("RM CERREDO", inplace=True)
-final_df["ROBUSTECIMIENTO"].replace("", "NO", inplace=True)
-final_df["CIERRE CUENTA DE INVERSIÓN"].replace("", "NO", inplace=True)
-final_df["INCIDENCIA PRODUCTIVA"].replace("", "NO", inplace=True)
-
-# Crear archivo Excel
+# Generar Excel
 wb = Workbook()
 ws = wb.active
 ws.title = "Consolidado"
 
-# Escribir encabezado
-header_font = Font(bold=True)
+# Escribir encabezados
+headers = list(final_df.columns)
+ws.append(headers)
+
+# Aplicar formato encabezados
 header_fill = PatternFill(start_color="DDDDDD", end_color="DDDDDD", fill_type="solid")
-center_align = Alignment(horizontal="center", vertical="center")
+header_font = Font(bold=True)
+center_align = Alignment(horizontal="center")
 
-for r in dataframe_to_rows(final_df, index=False, header=True):
-    ws.append(r)
-
-for cell in ws[1]:
+for col_idx, col in enumerate(headers, start=1):
+    cell = ws.cell(row=1, column=col_idx)
     cell.font = header_font
     cell.fill = header_fill
     cell.alignment = center_align
 
-# Aplicar centrado a columnas F, G, H
-for row in ws.iter_rows(min_row=2, min_col=6, max_col=8):
-    for cell in row:
-        cell.alignment = center_align
+# Funciones para aplicar reglas de formato condicional
+def apply_formatting(row):
+    estado_trello = str(row[1]).strip().upper()
+    estado_rm = str(row[2]).strip().upper()
+    asignado = str(row[3]).strip().upper()
+    asunto = str(row[4]).strip().upper()
 
-# Guardar archivo
-wb.save("/mnt/data/archivo_consolidado.xlsx")
+    prioridades_trello = [
+        "04 EN DESARROLLO | STAND BY",
+        "05 EN DESARROLLO | EN CURSO",
+        "07 EN PRUEBA QA | BACKLOG",
+        "08 EN PRUEBA QA | EN CURSO",
+        "10 SOLICITUD DE PASAJE A PROD.",
+    ]
+
+    responsables = [
+        "DARIO ELOLA", "NELSON DANIEL BORDÓN", "VALENTINA JUSZKIEWICZ",
+        "RENZO ANTONIOLI", "LUCAS GUTIERREZ", "VANINA ZYLBERG",
+        "CAROLINA NOEMI GUALDI", "FRANCHESCA GABRIELA RIVAS VELIZ"
+    ]
+
+    if asunto == "RM CERREDO" or estado_rm == "RM CERREDO":
+        return "YELLOW"
+    elif estado_trello == "05 EN DESARROLLO | EN CURSO" and "DESARROLLO" not in estado_rm:
+        return "RED"
+    elif estado_trello == "04 EN DESARROLLO | STAND BY" and "STAND BY" not in estado_rm:
+        return "RED"
+    elif estado_trello in prioridades_trello and asignado in responsables:
+        return "RED"
+    return None
+
+# Agregar datos y aplicar formato
+for i, row in final_df.iterrows():
+    excel_row = list(row)
+    ws.append(excel_row)
+    format_type = apply_formatting(excel_row)
+    fill_color = None
+
+    if format_type == "YELLOW":
+        fill_color = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
+    elif format_type == "RED":
+        fill_color = PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")
+
+    if fill_color:
+        for col in range(1, len(headers) + 1):
+            ws.cell(row=i + 2, column=col).fill = fill_color
+
+# Centrar columnas F, G, H
+for col_letter in ['F', 'G', 'H']:
+    for row in ws.iter_rows(min_row=2, max_row=ws.max_row, min_col=ord(col_letter) - 64, max_col=ord(col_letter) - 64):
+        for cell in row:
+            cell.alignment = center_align
+
+# Guardar archivo Excel
+output_file = 'archivo_consolidado.xlsx'
+wb.save(output_file)
+
+output_file
