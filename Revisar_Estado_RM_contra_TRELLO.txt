@@ -209,6 +209,26 @@ Un archivo Excel (.xlsx) generado con la estructura anterior, correctamente comb
   -  PRIORIDAD
 
   ...con color **rojo**.
+  
+Si en un registro la columna **"Estado TRELLO"** contiene alguno de estos valores:
+
+  - `08 En Prueba QA | EN CURSO`
+
+  Y en la columna **"Estado RM"** existe cualquier texto que no contenga las palabras **QA"** (no distingue mayúsculas o minúsculas), entonces:
+
+  Rellená toda la fila correspondiente de las columnas:
+
+  - Número RM  
+  - Estado TRELLO  
+  - Estado RM  
+  - Asignado a  
+  - Asunto  
+  - ROBUSTECIMIENTO	
+  - CIERRE CUENTA DE INVERSIÓN	
+  - INCIDENCIA PRODUCTIVA	
+  -  PRIORIDAD
+
+  ...con color **rojo**.
 
 
 IMPORTANTE: Realiza el proceso de principio a fin, hasta llegar a la generacion de del archivo .xlsx para descargar sin consultarme. No omitas ninguna de las intrucciones anteriores... Revisa y asegurate que se aplique todo.
@@ -216,132 +236,157 @@ IMPORTANTE: Realiza el proceso de principio a fin, hasta llegar a la generacion 
 
 SUMO EJEMPLO DEL PAYTHON CON EL PROCESO:
 
+
 import pandas as pd
 import re
 from openpyxl import Workbook
-from openpyxl.styles import Font, PatternFill, Alignment
+from openpyxl.styles import Font, Alignment, PatternFill
 from openpyxl.utils.dataframe import dataframe_to_rows
-from openpyxl.formatting.rule import FormulaRule
 
-# Funciones auxiliares
-def extraer_numero_rm(cadena):
-    match = re.search(r'RM\s*(\d+)\s*\|', str(cadena))
-    return int(match.group(1)) if match else None
+# Archivos
+archivo_principal = "1744288871073.csv"
+archivo_issues = "issues (1).csv"
+archivo_salida = "resultado_consolidado.xlsx"
 
-def extraer_prioridades(texto):
-    prioridades = []
-    patrones = [
-        r'\[ PRIORIDAD \d+\]',
-        r'\[\s*#\d+\s+(ALTA|MEDIA|BAJA)\s*\]',
-        r'\b(ALTA|MEDIA|BAJA)\b'
-    ]
-    for patron in patrones:
-        encontrados = re.findall(patron, texto, flags=re.IGNORECASE)
-        if encontrados:
-            prioridades.extend(encontrados if isinstance(encontrados, list) else [encontrados])
-    return ', '.join(set(prioridades)) if prioridades else None
-
-def contiene(texto, cadena):
-    return 'SI' if cadena.lower() in texto.lower() else 'NO'
-
-# Lectura segura de archivos
-def leer_csv_seguro(path, sep, encoding_list=["utf-8-sig", "latin1"]):
-    for enc in encoding_list:
+# Leer archivos con control de codificación
+def leer_csv_con_codificacion(path, delimitador):
+    codificaciones = ['utf-8', 'utf-8-sig', 'latin1']
+    for cod in codificaciones:
         try:
-            return pd.read_csv(path, sep=sep, encoding=enc)
+            return pd.read_csv(path, encoding=cod, sep=delimitador)
         except Exception:
             continue
     raise ValueError(f"No se pudo leer el archivo: {path}")
 
-# Carga de archivos
-archivo_principal = leer_csv_seguro("123456.csv", sep=",")
-issues = leer_csv_seguro("issues.csv", sep=";")
+df_main = leer_csv_con_codificacion(archivo_principal, ',')
+df_issues = leer_csv_con_codificacion(archivo_issues, ';')
 
-# Extracción y procesamiento
-archivo_principal['Número RM'] = archivo_principal.iloc[:, 0].apply(extraer_numero_rm)
-archivo_principal['Estado TRELLO'] = archivo_principal.iloc[:, 3]
-archivo_principal['Contenido C'] = archivo_principal.iloc[:, 2].fillna("")
-archivo_principal['ROBUSTECIMIENTO'] = archivo_principal['Contenido C'].apply(lambda x: 'SI' if 'ROBUSTECIMIENTO' in x else 'NO')
-archivo_principal['CIERRE CUENTA DE INVERSIÓN'] = archivo_principal['Contenido C'].apply(lambda x: 'SI' if re.search(r'CIERRE CUENTA DE INVERSIÓN|CIERRE DE BALANCE', x) else 'NO')
-archivo_principal['INCIDENCIA PRODUCTIVA'] = archivo_principal['Contenido C'].apply(lambda x: 'SI' if 'INCIDENCIA PRODUCTIVA' in x else 'NO')
-archivo_principal['PRIORIDAD'] = archivo_principal['Contenido C'].apply(extraer_prioridades)
+# Paso 1: Extracción de datos
+def extraer_numero_rm(texto):
+    match = re.search(r'RM\s*(\d+)\s*\|', str(texto))
+    return int(match.group(1)) if match else None
 
-# Cruce con issues.csv
-issues['Número RM'] = issues.iloc[:, 0]
-archivo_merged = archivo_principal.merge(issues, on='Número RM', how='left', suffixes=('', '_issues'))
+def extraer_marcadores(texto):
+    patrones = {
+        'ROBUSTECIMIENTO': r'ROBUSTECIMIENTO',
+        'CIERRE': r'CIERRE CUENTA DE INVERSIÓN|CIERRE DE BALANCE.*?%',
+        'INCIDENCIA': r'INCIDENCIA PRODUCTIVA',
+        'PRIORIDAD': r'\[ PRIORIDAD.*?\]|\[\s?#\d+.*?(ALTA|MEDIA|BAJA).*?\]'
+    }
+    resultado = {}
+    for clave, patron in patrones.items():
+        resultado[clave] = 'SI' if re.search(patron, str(texto), re.IGNORECASE) else ''
+    if resultado['PRIORIDAD']:
+        match = re.search(r'\[ PRIORIDAD\s*(.*?)\]', str(texto), re.IGNORECASE)
+        if not match:
+            match = re.search(r'\[\s?#\d+\s+([A-Z]+)', str(texto), re.IGNORECASE)
+        resultado['PRIORIDAD'] = match.group(1).strip() if match else ''
+    return resultado
 
-# Completar columnas vacías
-archivo_merged['Estado RM'] = archivo_merged['Estado'].fillna("RM CERREDO")
-archivo_merged['Asignado a'] = archivo_merged['Asignado a'].fillna("")
-archivo_merged['Asunto'] = archivo_merged['Asunto'].fillna("RM CERREDO")
+df_main['Número RM'] = df_main.iloc[:, 0].apply(extraer_numero_rm)
+df_main['Estado TRELLO'] = df_main.iloc[:, 3]
+df_main['Marcadores'] = df_main.iloc[:, 2].apply(extraer_marcadores)
 
-for col in ['ROBUSTECIMIENTO', 'CIERRE CUENTA DE INVERSIÓN', 'INCIDENCIA PRODUCTIVA']:
-    archivo_merged[col] = archivo_merged[col].replace('', 'NO')
+df_main['ROBUSTECIMIENTO'] = df_main['Marcadores'].apply(lambda x: x['ROBUSTECIMIENTO'] if x else 'NO')
+df_main['CIERRE CUENTA DE INVERSIÓN'] = df_main['Marcadores'].apply(lambda x: x['CIERRE'] if x else 'NO')
+df_main['INCIDENCIA PRODUCTIVA'] = df_main['Marcadores'].apply(lambda x: x['INCIDENCIA'] if x else 'NO')
+df_main['PRIORIDAD'] = df_main['Marcadores'].apply(lambda x: x['PRIORIDAD'] if x else '')
 
-# Crear Excel
-wb = Workbook()
-ws = wb.active
-ws.title = "Resumen Consolidado"
+# Paso 2: Cruce con issues
+df_merge = pd.merge(df_main, df_issues, left_on='Número RM', right_on=df_issues.columns[0], how='left')
 
-columnas_finales = [
-    "Número RM", "Estado TRELLO", "Estado RM", "Asignado a", "Asunto",
-    "ROBUSTECIMIENTO", "CIERRE CUENTA DE INVERSIÓN", "INCIDENCIA PRODUCTIVA", "PRIORIDAD"
+columnas_salida = [
+    'Número RM',
+    'Estado TRELLO',
+    'Estado',
+    'Asignado a',
+    'Asunto',
+    'ROBUSTECIMIENTO',
+    'CIERRE CUENTA DE INVERSIÓN',
+    'INCIDENCIA PRODUCTIVA',
+    'PRIORIDAD'
+]
+df_resultado = df_merge[columnas_salida].copy()
+df_resultado.columns = [
+    'Número RM',
+    'Estado TRELLO',
+    'Estado RM',
+    'Asignado a',
+    'Asunto',
+    'ROBUSTECIMIENTO',
+    'CIERRE CUENTA DE INVERSIÓN',
+    'INCIDENCIA PRODUCTIVA',
+    'PRIORIDAD'
 ]
 
-df_final = archivo_merged[columnas_finales]
+def aplicar_reglas_condicionales(df):
+    reglas_rojo = [
+        ('Estado TRELLO', '04 En Desarrollo | STAND BY', 'Estado RM', 'stand by'),
+        ('Estado TRELLO', '05 En Desarrollo | EN CURSO', 'Estado RM', 'desarrollo'),
+        ('Estado TRELLO', '08 En Prueba QA | EN CURSO', 'Estado RM', 'qa'),
+    ]
+    responsables = [
+        'Dario Elola', 'Nelson Daniel Bordón', 'Valentina Juszkiewicz', 'Renzo Antonioli',
+        'Lucas Gutierrez', 'Vanina Zylberg', 'Carolina Noemi Gualdi', 'Franchesca Gabriela Rivas Veliz'
+    ]
 
-# Escribir encabezados
-ws.append([col.upper() for col in columnas_finales])
-header_fill = PatternFill(start_color="D9D9D9", end_color="D9D9D9", fill_type="solid")
-for cell in ws[1]:
-    cell.font = Font(bold=True)
+    filas_rojas = []
+
+    for i, row in df.iterrows():
+        fila_roja = False
+        for regla in reglas_rojo:
+            if str(row[regla[0]]).strip().lower() == regla[1].lower():
+                if regla[3] not in str(row[regla[2]]).lower():
+                    fila_roja = True
+                    break
+        if row['Estado TRELLO'] in [
+            '04 En Desarrollo | STAND BY', '05 En Desarrollo | EN CURSO',
+            '07 En Prueba QA | BACKLOG', '08 En Prueba QA | EN CURSO', '10 Solicitud de Pasaje a PROD.'
+        ] and row['Asignado a'] in responsables:
+            fila_roja = True
+        if fila_roja:
+            filas_rojas.append(i)
+
+    for col in ['ROBUSTECIMIENTO', 'CIERRE CUENTA DE INVERSIÓN', 'INCIDENCIA PRODUCTIVA']:
+        df[col] = df[col].replace('', 'NO')
+
+    for i, row in df.iterrows():
+        if pd.isna(row['Asunto']) or 'resuelto' in str(row['Asunto']).lower():
+            df.at[i, 'Asunto'] = 'RM CERREDO'
+            filas_rojas.append(i)
+        if pd.isna(row['Estado RM']):
+            df.at[i, 'Estado RM'] = 'RM CERREDO'
+            filas_rojas.append(i)
+
+    return list(set(filas_rojas))
+
+filas_rojas = aplicar_reglas_condicionales(df_resultado)
+
+wb = Workbook()
+ws = wb.active
+ws.title = "Consolidado"
+
+encabezados = df_resultado.columns.tolist()
+ws.append(encabezados)
+
+header_font = Font(bold=True)
+header_fill = PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid")
+center_align = Alignment(horizontal="center")
+
+for col in range(1, len(encabezados) + 1):
+    cell = ws.cell(row=1, column=col)
+    cell.font = header_font
     cell.fill = header_fill
 
-# Escribir datos
-for r in dataframe_to_rows(df_final, index=False, header=False):
-    ws.append(r)
+for r_idx, fila in enumerate(df_resultado.itertuples(index=False), start=2):
+    for c_idx, valor in enumerate(fila, start=1):
+        celda = ws.cell(row=r_idx, column=c_idx, value=valor)
+        if ws.cell(row=1, column=c_idx).value in [
+            'ROBUSTECIMIENTO', 'CIERRE CUENTA DE INVERSIÓN', 'INCIDENCIA PRODUCTIVA'
+        ]:
+            celda.alignment = center_align
+    if r_idx - 2 in filas_rojas:
+        for c_idx in range(1, len(encabezados) + 1):
+            ws.cell(row=r_idx, column=c_idx).fill = PatternFill(start_color="FF6666", end_color="FF6666", fill_type="solid")
 
-# Centramos columnas F, G, H
-for col_letter in ['F', 'G', 'H']:
-    for cell in ws[col_letter]:
-        cell.alignment = Alignment(horizontal='center')
-
-# Formatos condicionales
-amarillo = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
-rojo = PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")
-
-# Reglas de resaltado condicional
-for i in range(2, ws.max_row + 1):
-    estado_rm = ws[f'C{i}'].value or ""
-    asunto = ws[f'E{i}'].value or ""
-    estado_trello = ws[f'B{i}'].value or ""
-    asignado = ws[f'D{i}'].value or ""
-
-    if 'Resuelto' in asunto or asunto == "RM CERREDO" or estado_rm == "RM CERREDO":
-        for col in range(1, 10):
-            ws.cell(row=i, column=col).fill = amarillo
-
-    if estado_trello in [
-        "04 En Desarrollo | STAND BY",
-        "05 En Desarrollo | EN CURSO",
-        "07 En Prueba QA | BACKLOG",
-        "08 En Prueba QA | EN CURSO",
-        "10 Solicitud de Pasaje a PROD."
-    ] and asignado in [
-        "Dario Elola", "Nelson Daniel Bordón", "Valentina Juszkiewicz",
-        "Renzo Antonioli", "Lucas Gutierrez", "Vanina Zylberg",
-        "Carolina Noemi Gualdi", "Franchesca Gabriela Rivas Veliz"
-    ]:
-        for col in range(1, 10):
-            ws.cell(row=i, column=col).fill = rojo
-
-    if estado_trello == "05 En Desarrollo | EN CURSO" and "desarrollo" not in estado_rm.lower():
-        for col in range(1, 10):
-            ws.cell(row=i, column=col).fill = rojo
-
-    if estado_trello == "04 En Desarrollo | STAND BY" and "stand by" not in estado_rm.lower():
-        for col in range(1, 10):
-            ws.cell(row=i, column=col).fill = rojo
-
-# Guardar archivo
-wb.save("/mnt/data/archivo_consolidado.xlsx")
+wb.save(archivo_salida)
