@@ -237,6 +237,7 @@ IMPORTANTE: Realiza el proceso de principio a fin, hasta llegar a la generacion 
 SUMO EJEMPLO DEL PAYTHON CON EL PROCESO:
 
 
+
 import pandas as pd
 import re
 from openpyxl import Workbook
@@ -244,9 +245,9 @@ from openpyxl.styles import Font, Alignment, PatternFill
 from openpyxl.utils.dataframe import dataframe_to_rows
 
 # Archivos
-archivo_principal = "1744288871073.csv"
-archivo_issues = "issues (1).csv"
-archivo_salida = "resultado_consolidado.xlsx"
+archivo_principal = "1744372996973.csv"
+archivo_issues = "issues.csv"
+archivo_salida = "resultado_consolidado_CORREGIDO.xlsx"
 
 # Leer archivos con control de codificación
 def leer_csv_con_codificacion(path, delimitador):
@@ -269,7 +270,7 @@ def extraer_numero_rm(texto):
 def extraer_marcadores(texto):
     patrones = {
         'ROBUSTECIMIENTO': r'ROBUSTECIMIENTO',
-        'CIERRE': r'CIERRE CUENTA DE INVERSIÓN|CIERRE DE BALANCE.*?%',
+        'CIERRE': r'CIERRE CUENTA DE INVERSIÓN|CIERRE DE BALANCE\s*\d{4}',
         'INCIDENCIA': r'INCIDENCIA PRODUCTIVA',
         'PRIORIDAD': r'\[ PRIORIDAD.*?\]|\[\s?#\d+.*?(ALTA|MEDIA|BAJA).*?\]'
     }
@@ -362,6 +363,7 @@ def aplicar_reglas_condicionales(df):
 
 filas_rojas = aplicar_reglas_condicionales(df_resultado)
 
+# Crear Excel
 wb = Workbook()
 ws = wb.active
 ws.title = "Consolidado"
@@ -372,6 +374,8 @@ ws.append(encabezados)
 header_font = Font(bold=True)
 header_fill = PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid")
 center_align = Alignment(horizontal="center")
+rojo_fill = PatternFill(start_color="FF6666", end_color="FF6666", fill_type="solid")
+amarillo_fill = PatternFill(start_color="FFFF99", end_color="FFFF99", fill_type="solid")
 
 for col in range(1, len(encabezados) + 1):
     cell = ws.cell(row=1, column=col)
@@ -379,14 +383,19 @@ for col in range(1, len(encabezados) + 1):
     cell.fill = header_fill
 
 for r_idx, fila in enumerate(df_resultado.itertuples(index=False), start=2):
+    row_color = None
+    if r_idx - 2 in filas_rojas:
+        row_color = rojo_fill
+    elif 'RM CERREDO' in (fila[2], fila[4]):
+        row_color = amarillo_fill
+
     for c_idx, valor in enumerate(fila, start=1):
         celda = ws.cell(row=r_idx, column=c_idx, value=valor)
-        if ws.cell(row=1, column=c_idx).value in [
+        if encabezados[c_idx - 1] in [
             'ROBUSTECIMIENTO', 'CIERRE CUENTA DE INVERSIÓN', 'INCIDENCIA PRODUCTIVA'
         ]:
             celda.alignment = center_align
-    if r_idx - 2 in filas_rojas:
-        for c_idx in range(1, len(encabezados) + 1):
-            ws.cell(row=r_idx, column=c_idx).fill = PatternFill(start_color="FF6666", end_color="FF6666", fill_type="solid")
+        if row_color:
+            celda.fill = row_color
 
 wb.save(archivo_salida)
