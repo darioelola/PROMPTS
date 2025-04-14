@@ -1,0 +1,473 @@
+Solicitud de procesamiento de datos a partir de archivos CSV y generación de archivo Excel consolidado
+
+Hola, necesito que proceses dos archivos CSV para generar un nuevo archivo Excel con información combinada. A continuación, detallo todos los pasos que debés seguir cuidadosamente para que el proceso sea exitoso:
+
+🔹 Archivos involucrados
+
+Archivo principal
+
+El nombre del archivo es una cadena numérica (por ejemplo: 123456.csv).
+
+Está delimitado por comas (,).
+
+Contiene una columna A con cadenas de texto que incluyen un número entre la palabra "RM" y el símbolo "|".
+
+La columna D contiene información adicional que debe ser extraída completa.
+
+Archivo adicional (referencial)
+
+Nombre: issues.csv
+
+Delimitado por punto y coma (;)
+
+Contiene una columna con valores numéricos (formato int64) que deben ser comparados con los números extraídos del archivo principal.
+
+⚠️ Consideraciones importantes
+
+La columna del archivo principal contiene los números como texto (string), mientras que issues.csv los tiene como números (int64).
+
+Convertí los valores extraídos del archivo principal a tipo numérico antes de realizar el cruce.
+
+Si al leer alguno de los archivos ocurre un error de codificación, intentá reabrirlos utilizando una codificación alternativa como:
+
+"utf-8-sig"
+
+"latin1"
+
+🔄 Proceso detallado
+
+✅ Paso 1: Extracción de datos del archivo principal
+
+Desde la Columna A, extraé únicamente los números ubicados entre la palabra "RM" y el símbolo "|" en cada celda.
+
+Mantené el encabezado original de la columna A.
+
+Extraé también el contenido completo de la Columna D, incluyendo su encabezado.
+
+Extraé también de la Columna C, las cadenas "ROBUSTECIMIENTO" o "CIERRE CUENTA DE INVERSIÓN" o "CIERRE DE BALANCE...%" "INCIDENCIA PRODUCTIVA" o "[ PRIORIDAD ... ]" o " [ #... ALTA ]" (tener en cuenta que el numero de la prioridad puede ir variando.. tambien puede ir variando la cadena ALTA, MEDIA, ETC. tambien es conciderado como estado de prioridad) Dentro de esta celda cada una de las cadena estan separadas por ",". En caso de encontrar mas de una de las cadenas especificadas en una de las celdas, extraer todas.
+
+✅ Paso 2: Cruce con issues.csv
+
+Usá los números extraídos de la Columna A como clave de búsqueda para encontrar coincidencias en issues.csv.
+
+Por cada coincidencia, extraé los siguientes campos:
+
+El valor de la columna "Estado".
+
+El valor de la columna "Asignado a".
+
+✅ Paso 3: Generación del archivo Excel final
+
+Creá un archivo .xlsx con la siguiente estructura:
+
+Columna	Descripción
+A	Números extraídos de la Columna A del archivo principal (Nombre en Excel: Número RM)
+B	Contenido de la Columna D del archivo principal (Nombre en Excel: Estado TRELLO)
+C	Valor de la columna "Estado" desde issues.csv (Nombre en Excel: Estado RM)
+D	Valor de la columna "Asignado a" desde issues.csv (Nombre en Excel: Asignado a)
+E	Valor de la columna "Asunto" desde issues.csv (Nombre en Excel: Asunto)
+F   Completar con la palabra "SI", en el caso que dentro del Contenido extraido de la Columna D del archivo principal, se haya encontrado la cadena "ROBUSTECIMIENTO". (Nombre en Excel: ROBUSTECIMIENTO)
+G   Completar con la palabra "SI", en el caso que dentro del Contenido extraido de la Columna D del archivo principal, se haya encontrado la cadena "CIERRE CUENTA DE INVERSIÓN" o "CIERRE DE BALANCE...%" (Nombre en Excel: CIERRE CUENTA DE INVERSIÓN)
+H  Completar con la palabra "SI", en el caso que dentro del Contenido extraido de la Columna D del archivo principal, se haya encontrado la cadena "INCIDENCIA PRODUCTIVA". (Nombre en Excel: INCIDENCIA PRODUCTIVA)
+I  Completar con la cadena de "prioridad" [ PRIORIDAD 0X ] o ALTA , BAJA ETC, en el caso que dentro del Contenido extraído de la Columna D del archivo principal, se haya encontrado la cadena "[ PRIORIDAD...]" O ALTA, BAJA.... (Nombre en Excel: PRIORIDAD).
+J  Completar con el comentario (si es que existe) para el cada NÚMERO RM.  (Nombre en Excel: COMENTARIO)
+
+
+Las columnas F, G y H centrar el contenido
+
+🎨 Formato y resaltado condicional en Excel (aplicar el formato desde la columna "A" hasta la "I")
+
+- Encabezados en MAYÚSCULAS, negrita, fondo gris claro.
+
+- Si ASUNTO está vacío o que el contenido de la celda, contenga dentro de la cadeana la palabra "Resuelto":
+  - Completar con "RM CERREDO"
+  - Resaltar toda la fila en amarillo.
+
+- Si "Estado RM está vacío:
+  - Completar con "RM CERREDO"
+  - Resaltar toda la fila en amarillo.
+
+- Si las columnas ROBUSTECIMIENTO	CIERRE CUENTA DE INVERSIÓN	INCIDENCIA PRODUCTIVA estan vacias:
+  -Completar con "NO" 
+ 
+
+Si una fila cumple con las siguientes dos condiciones simultáneamente:
+
+En la columna "Estado TRELLO" contiene alguno de estos valores:
+
+04 En Desarrollo | STAND BY
+
+05 En Desarrollo | EN CURSO
+
+07 En Prueba QA | BACKLOG
+
+08 En Prueba QA | EN CURSO
+
+10 Solicitud de Pasaje a PROD.
+
+Y en la columna "Asignado a" se encuentra alguno de estos nombres:
+
+Dario Elola
+
+Nelson Daniel Bordón
+
+Valentina Juszkiewicz
+
+Renzo Antonioli
+
+Lucas Gutierrez
+
+Vanina Zylberg
+
+Carolina Noemi Gualdi
+
+Franchesca Gabriela Rivas Veliz
+
+Entonces, rellená esa fila en las columnas:
+
+Número RM
+
+Estado TRELLO
+
+Estado RM
+
+Asignado a
+
+Asunto
+
+ROBUSTECIMIENTO	
+
+CIERRE CUENTA DE INVERSIÓN	
+
+INCIDENCIA PRODUCTIVA	
+
+PRIORIDAD
+
+...con color rojo.
+
+-----------
+Si una fila cumple con las siguientes dos condiciones simultáneamente:
+
+En la columna "Estado TRELLO" contiene alguno de estos valores:
+
+02 En Análisis | BACKLOG ###
+03 En Análisis | EN CURSO ###
+03 En Análisis | DEV. POR DESA
+06 En Prueba Func. | EN CURSO
+
+Y en la columna "Asignado a" NO se encuentra alguno de estos nombres:
+
+Dario Elola
+
+Nelson Daniel Bordón
+
+Valentina Juszkiewicz
+
+Renzo Antonioli
+
+Lucas Gutierrez
+
+Vanina Zylberg
+
+Carolina Noemi Gualdi
+
+Franchesca Gabriela Rivas Veliz
+
+G- Func. Gastos y Contabilidad
+
+Entonces, rellená esa fila en las columnas:
+
+Número RM
+
+Estado TRELLO
+
+Estado RM
+
+Asignado a
+
+Asunto
+
+ROBUSTECIMIENTO	
+
+CIERRE CUENTA DE INVERSIÓN	
+
+INCIDENCIA PRODUCTIVA	
+
+PRIORIDAD
+
+...con color rojo.
+---------
+
+📦 Entrega esperada
+
+Un archivo Excel (.xlsx) generado con la estructura anterior, correctamente combinado y con los colores aplicados según las reglas definidas.
+
+- **➕ Nueva regla adicional de resaltado:**
+
+  Si en un registro la columna **"Estado TRELLO"** contiene alguno de estos valores:
+
+  - `05 En Desarrollo | EN CURSO`
+
+  Y en la columna **"Estado RM"** existe cualquier texto que no contenga las palabras **"Desarrollo"** (no distingue mayúsculas o minúsculas), entonces:
+
+  Rellená toda la fila correspondiente de las columnas:
+
+  - Número RM  
+  - Estado TRELLO  
+  - Estado RM  
+  - Asignado a  
+  - Asunto  
+  - ROBUSTECIMIENTO	
+  - CIERRE CUENTA DE INVERSIÓN	
+  - INCIDENCIA PRODUCTIVA	
+  -  PRIORIDAD
+
+
+  ...con color **rojo**.
+
+ Si en un registro la columna **"Estado TRELLO"**  contiene alguno de estos valores:
+
+  - `05 En Desarrollo | EN CURSO`
+
+  Y en la columna **"Estado RM"** existe cualquier texto que no contenga las palabras **"Desarrollo"** (no distingue mayúsculas o minúsculas), entonces:
+
+  Rellená toda la fila correspondiente de las columnas:
+
+  - Número RM  
+  - Estado TRELLO  
+  - Estado RM  
+  - Asignado a  
+  - Asunto  
+  - ROBUSTECIMIENTO	
+  - CIERRE CUENTA DE INVERSIÓN	
+  - INCIDENCIA PRODUCTIVA	
+  -  PRIORIDAD
+
+  ...con color **rojo**.
+  
+    Si en un registro la columna **"Estado TRELLO"** contiene alguno de estos valores:
+
+  - `04 En Desarrollo | STAND BY`
+
+  Y en la columna **"Estado RM"** existe cualquier texto que no contenga las palabras **"STAND BY"** (no distingue mayúsculas o minúsculas), entonces:
+
+  Rellená toda la fila correspondiente de las columnas:
+
+  - Número RM  
+  - Estado TRELLO  
+  - Estado RM  
+  - Asignado a  
+  - Asunto  
+  - ROBUSTECIMIENTO	
+  - CIERRE CUENTA DE INVERSIÓN	
+  - INCIDENCIA PRODUCTIVA	
+  -  PRIORIDAD
+
+  ...con color **rojo**.
+  
+Si en un registro la columna **"Estado TRELLO"** contiene alguno de estos valores:
+
+  - `08 En Prueba QA | EN CURSO`
+
+  Y en la columna **"Estado RM"** existe cualquier texto que no contenga las palabras **QA"** (no distingue mayúsculas o minúsculas), entonces:
+
+  Rellená toda la fila correspondiente de las columnas:
+
+  - Número RM  
+  - Estado TRELLO  
+  - Estado RM  
+  - Asignado a  
+  - Asunto  
+  - ROBUSTECIMIENTO	
+  - CIERRE CUENTA DE INVERSIÓN	
+  - INCIDENCIA PRODUCTIVA	
+  -  PRIORIDAD
+
+  ...con color **rojo**.
+  
+
+
+Luego de terminar el proceso anteior y armar el archivo "Resultado" , curuzar ese archivo resultado con los comentarios que se detallan a continuacion 
+
+Cruce con COMENTARIOS (para agregar comentarios, en caso que haya)
+
+Luego ir a la seccion COMENTARIOS de este mismo prompt. La misma esta delimitada entre las cadenas 
+
+
+"INCIO COMENTARIOS" y "FIN COMENTARIOS"
+
+Tienen el siguiente formato
+
+12345 | dearrollo del comentario
+
+Usá los números de la columna NÚMERO RM para cruzar con el numero anterior a "|" de cada comentario
+si encuentra concidencia ---- Se copia en la columna J lo que esta despues de "|". 
+Si no se ecnutra concidencia dentro de los comentarios para los números de la NÚMERO RM .... se deja la celda de la columna J vacia 
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+INCIO COMENTARIOS
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+80673 | Verificar con Laura si este tema lo tiene que tomar mi equipo
+
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+FIN COMENTARIOS
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+IMPORTANTE: Realiza el proceso de principio a fin, hasta llegar a la generacion de del archivo .xlsx para descargar sin consultarme. No omitas ninguna de las intrucciones anteriores... Revisa y asegurate que se aplique todo.
+
+
+
+
+SUMO EJEMPLO DEL PAYTHON CON EL PROCESO:
+
+
+import pandas as pd
+import re
+import xlsxwriter
+
+# Cargar los archivos
+main_file_path = "1744633215207.csv"
+issues_file_path = "issues.csv"
+
+# Leer archivos con codificación alternativa si es necesario
+encodings = ["utf-8", "utf-8-sig", "latin1"]
+for enc in encodings:
+    try:
+        main_df = pd.read_csv(main_file_path, encoding=enc)
+        break
+    except Exception:
+        continue
+
+for enc in encodings:
+    try:
+        issues_df = pd.read_csv(issues_file_path, encoding=enc, sep=";")
+        break
+    except Exception:
+        continue
+
+# Extraer número RM
+def extract_rm_number(text):
+    match = re.search(r"RM\s*(\d+)\s*\|", str(text))
+    return int(match.group(1)) if match else None
+
+# Extraer etiquetas
+def extract_labels(text):
+    text = str(text).upper()
+    results = {
+        "ROBUSTECIMIENTO": "SI" if "ROBUSTECIMIENTO" in text else "NO",
+        "CIERRE_CUENTA": "SI" if "CIERRE CUENTA DE INVERSIÓN" in text or "CIERRE DE BALANCE" in text else "NO",
+        "INCIDENCIA_PRODUCTIVA": "SI" if "INCIDENCIA PRODUCTIVA" in text else "NO",
+        "PRIORIDAD": None
+    }
+    prioridad_match = re.findall(r"\[ *PRIORIDAD *\d+ *\]", text)
+    estado_prioridad_match = re.findall(r"\b(ALTA|MEDIA|BAJA)\b", text)
+    if prioridad_match:
+        results["PRIORIDAD"] = prioridad_match[0]
+    elif estado_prioridad_match:
+        results["PRIORIDAD"] = estado_prioridad_match[0]
+    return results
+
+# Aplicar funciones
+main_df["Número RM"] = main_df["Name"].apply(extract_rm_number)
+main_df["Estado TRELLO"] = main_df["list"].fillna("")
+labels_info = main_df["labels"].apply(extract_labels)
+labels_df = pd.DataFrame(labels_info.tolist())
+main_processed_df = pd.concat([main_df[["Número RM", "labels", "Estado TRELLO"]], labels_df], axis=1)
+
+# Unir con issues.csv
+issues_df.rename(columns={issues_df.columns[0]: "Número RM"}, inplace=True)
+merged_df = pd.merge(main_processed_df, issues_df, on="Número RM", how="left")
+merged_df["ROBUSTECIMIENTO"] = merged_df["ROBUSTECIMIENTO"].fillna("NO")
+merged_df["CIERRE_CUENTA"] = merged_df["CIERRE_CUENTA"].fillna("NO")
+merged_df["INCIDENCIA_PRODUCTIVA"] = merged_df["INCIDENCIA_PRODUCTIVA"].fillna("NO")
+merged_df["Estado"] = merged_df["Estado"].fillna("")
+merged_df["Asunto"] = merged_df["Asunto"].fillna("")
+merged_df["Estado RM"] = merged_df["Estado"]
+merged_df["Asunto RM"] = merged_df["Asunto"]
+
+final_df = merged_df.rename(columns={
+    "Número RM": "Número RM",
+    "Estado TRELLO": "Estado TRELLO",
+    "Estado RM": "Estado RM",
+    "Asignado a": "Asignado a",
+    "Asunto": "Asunto",
+    "ROBUSTECIMIENTO": "ROBUSTECIMIENTO",
+    "CIERRE_CUENTA": "CIERRE CUENTA DE INVERSIÓN",
+    "INCIDENCIA_PRODUCTIVA": "INCIDENCIA PRODUCTIVA",
+    "PRIORIDAD": "PRIORIDAD"
+})[[
+    "Número RM", "Estado TRELLO", "Estado RM", "Asignado a", "Asunto",
+    "ROBUSTECIMIENTO", "CIERRE CUENTA DE INVERSIÓN", "INCIDENCIA PRODUCTIVA",
+    "PRIORIDAD"
+]]
+
+# Agregar comentarios
+comentarios_dict = {80673: "Verificar con Laura si este tema lo tiene que tomar mi equipo"}
+final_df["COMENTARIO"] = final_df["Número RM"].map(comentarios_dict)
+
+# Exportar a Excel
+output_path = "Resultado_RM_Procesado.xlsx"
+with pd.ExcelWriter(output_path, engine='xlsxwriter') as writer:
+    final_df.to_excel(writer, index=False, sheet_name='Resultado')
+    workbook = writer.book
+    worksheet = writer.sheets['Resultado']
+
+    # Formato encabezado
+    header_format = workbook.add_format({'bold': True, 'bg_color': '#D3D3D3', 'align': 'center'})
+    for col_num, value in enumerate(final_df.columns):
+        worksheet.write(0, col_num, value.upper(), header_format)
+
+    # Centrar columnas F, G, H (índices 5, 6, 7)
+    center_format = workbook.add_format({'align': 'center'})
+    worksheet.set_column(5, 7, None, center_format)
+
+    # Estilos
+    yellow_fill = workbook.add_format({'bg_color': 'yellow'})
+    red_fill = workbook.add_format({'bg_color': '#FF9999'})
+
+    # Listas y condiciones
+    estado_trello_red = [
+        "04 En Desarrollo | STAND BY",
+        "05 En Desarrollo | EN CURSO",
+        "07 En Prueba QA | BACKLOG",
+        "08 En Prueba QA | EN CURSO",
+        "10 Solicitud de Pasaje a PROD.",
+        "02 En Análisis | BACKLOG ###",
+        "03 En Análisis | EN CURSO ###",
+        "03 En Análisis | DEV. POR DESA",
+        "06 En Prueba Func. | EN CURSO"
+    ]
+    equipo_asignado_rojo = [
+        "Dario Elola", "Nelson Daniel Bordón", "Valentina Juszkiewicz",
+        "Renzo Antonioli", "Lucas Gutierrez", "Vanina Zylberg",
+        "Carolina Noemi Gualdi", "Franchesca Gabriela Rivas Veliz"
+    ]
+    equipo_ampliado = equipo_asignado_rojo + ["G- Func. Gastos y Contabilidad"]
+
+    for row_idx, row in final_df.iterrows():
+        estado = str(row["Estado TRELLO"]).strip()
+        asignado = str(row["Asignado a"]).strip()
+        estado_rm = str(row["Estado RM"]).strip().lower()
+
+        cond1 = estado in estado_trello_red[:5] and asignado in equipo_asignado_rojo
+        cond2 = estado in estado_trello_red[5:] and asignado not in equipo_ampliado
+        cond3 = estado == "05 En Desarrollo | EN CURSO" and "desarrollo" not in estado_rm
+        cond4 = estado == "04 En Desarrollo | STAND BY" and "stand by" not in estado_rm
+        cond5 = estado == "08 En Prueba QA | EN CURSO" and "qa" not in estado_rm
+
+        if cond1 or cond2 or cond3 or cond4 or cond5:
+            worksheet.conditional_format(row_idx + 1, 0, row_idx + 1, 8,
+                                         {'type': 'no_blanks', 'format': red_fill})
+
+        if (
+            pd.isna(row['Estado RM']) or row['Estado RM'] == "" or
+            "resuelto" in str(row['Asunto']).lower()
+        ):
+            worksheet.conditional_format(row_idx + 1, 0, row_idx + 1, 8,
+                                         {'type': 'no_blanks', 'format': yellow_fill})
+
+
