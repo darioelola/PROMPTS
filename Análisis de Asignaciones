@@ -1,151 +1,104 @@
 
-📁 ARCHIVOS INVOLUCRADOS
+🎯 Prompt Profesional para ChatGPT:
 
-1. ARCHIVO PRINCIPAL
-- Nombre: cadena numérica (ejemplo: 123456.csv).
-- Formato: CSV delimitado por comas (,).
-- Columnas relevantes:
-  - Columna A: contiene texto con número embebido entre "RM" y "|". Ejemplo: "ID RM12345| Detalle".
-  - Columnas C, D y F: conservar su contenido original.
-  - Columna E: contiene número entre llaves { }. Ejemplo: "{ 01 }".
+Procesar un archivo CSV exportado desde Trello para obtener la siguiente salida con formato profesional. 
+El archivo tiene las siguientes columnas: Name, URL, board, labels, list.
 
-2. ARCHIVO DE REFERENCIA
-- Nombre: issues.csv.
-- Formato: CSV delimitado por punto y coma (;).
-- Columnas relevantes:
-  - "#": identificador numérico (int64) que debe coincidir con el número extraído de la columna A.
-  - Columnas adicionales: "Estado", "Asignado a", "Asunto".
+🔹 Objetivo:
+- Mantener columna Name (renombrada como "RM").
+- Eliminar columna URL.
+- Mantener columna board (renombrada como "PROYECTO").
+- Extraer desde la columna labels:
+    - Un número entre llaves { } → PRIORIDAD  Ejemplo: "{ 01 }" = 1
+    - Un nombre de recurso → ASIGNADO A (el nombre debe ser uno de los siguientes):
+        - Dario Elola
+        - Daniel Bordon
+        - Valentina Juszkiewicz
+        - Renzo Antonioli
+        - Lucas Gutierrez
+        - Vanina Zylberg
+        - Carolina Gualdi
+        - Franchesca Rivas
+- Mantener columna list (renombrada como "ESTADO TRELLO").
 
-⚙️ CONSIDERACIONES TÉCNICAS
+🔹 Columnas de salida:
+| COLUMNA        | DESCRIPCIÓN                                             |
+|----------------|----------------------------------------------------------|
+| ASIGNADO A     | Nombre extraído desde Columna labels                     |
+| PRIORIDAD      | Número entre { } extraído desde la columna labels        |
+| PROYECTO       | Contenido original de Columna board                      |
+| ESTADO TRELLO  | Contenido original de Columna list                       |
+| RM             | Contenido original de Columna Name                       |
 
-- Convertir el número extraído de la columna A del archivo principal a tipo int64.
-- Convertir la columna "#" del archivo issues.csv también a int64.
-- Intentar lectura de archivos con codificaciones: "utf-8-sig" y "latin1".
-
-🔄 PROCESO DETALLADO
-
-✅ PASO 1: PROCESAMIENTO DEL ARCHIVO PRINCIPAL
-- Extraer número entre "RM" y "|" en la Columna A → campo NUMERO_RM (int64).
-- Extraer número entre { y } en la Columna E → campo PRIORIDAD.
-- Conservar columnas:
-  - C → Asignado
-  - D → Proyecto
-  - F → Estado TRELLO
-  - A (original completo) para uso posterior.
-
-✅ PASO 2: CRUCE CON ISSUES.CSV
-- Relacionar NUMERO_RM (archivo principal) con "#" (issues.csv) en formato int64.
-- Incorporar columnas desde issues.csv:
-  - Estado
-  - Asignado a
-  - Asunto
-
-✅ PASO 3: GENERACIÓN DE ARCHIVO EXCEL CONSOLIDADO
-- Crear un archivo .xlsx con columnas:
-
-  | COLUMNA        | CONTENIDO                                                                 |
-  |----------------|---------------------------------------------------------------------------|
-  | ASIGNADO A     | De columna C, eliminar texto entre paréntesis (inclusive), en mayúsculas |
-  | PRIORIDAD      | Número extraído de la Columna E                                           |
-  | PROYECTO       | Contenido de la Columna D                                                 |
-  | ESTADO TRELLO  | Contenido de la Columna F                                                 |
-  | NUMERO RM      | Número extraído de Columna A                                              |
-  | ASUNTO         | Desde issues.csv (o contenido de Columna A si PROYECTO = "Tablero de Control") |
-
-- Encabezados en MAYÚSCULAS, negrita, fondo gris claro.
+🔹 Formato de salida:
+- Encabezados en MAYÚSCULAS, NEGRITA, fondo gris claro.
 - Ordenar por: ASIGNADO A, PRIORIDAD, PROYECTO, ESTADO TRELLO.
-- Insertar una fila en blanco cada vez que cambie ASIGNADO A.
-- Si ASUNTO está vacío:
-  - Completar con "RM CERREDO"
-  - Resaltar toda la fila en amarillo.
-- Si el proyecto es TABLERO DE CONTROL, completar la columna asuento ASUNTO (del archivo final) con el contenido de la columna name del archivo principal
+- Insertar fila en blanco al cambiar el valor de ASIGNADO A.
+- Ajustar el tamaño de las columnas para que todas las celdas muestren todo el contenido (¡¡¡¡incluyendo los titulos!!!!)
+- Excepto el título, centrar el contenido de la columna PRIORIDAD.
 
-SUNO UN COGO DE PYTHON CON EL PROCESO QUE SE DEBERIA HACER: 
+📄 Código Python Utilizado:
+
 import pandas as pd
-import numpy as np
-from openpyxl import Workbook
-from openpyxl.styles import Font, PatternFill
+import re
 
-def procesar_reportes(archivo_principal, archivo_issues, salida_excel):
-    # Leer archivos con codificaciones alternativas
-    def leer_csv_codificado(path, sep):
-        for encoding in ["utf-8-sig", "latin1"]:
-            try:
-                return pd.read_csv(path, sep=sep, encoding=encoding)
-            except Exception:
-                continue
-        raise ValueError(f"No se pudo leer el archivo: {path}")
+# Cargar el CSV original
+df = pd.read_csv("nombre_del_archivo.csv")
 
-    df_principal = leer_csv_codificado(archivo_principal, sep=",")
-    df_issues = leer_csv_codificado(archivo_issues, sep=";")
+# Lista de recursos válidos
+recursos_validos = [
+    "Dario Elola", "Daniel Bordon", "Valentina Juszkiewicz", "Renzo Antonioli",
+    "Lucas Gutierrez", "Vanina Zylberg", "Carolina Gualdi", "Franchesca Rivas"
+]
 
-    # Extraer datos necesarios del archivo principal
-    df_principal["NUMERO_RM"] = df_principal["Name"].str.extract(r"RM\s*(\d+)\s*\|")[0]
-    df_principal["NUMERO_RM"] = pd.to_numeric(df_principal["NUMERO_RM"], errors="coerce").astype("Int64")
-    df_principal["PRIORIDAD"] = df_principal["labels"].str.extract(r"\{\s*(\d+)\s*\}")[0]
-    df_principal = df_principal.rename(columns={
-        "assigned": "ASIGNADO",
-        "board": "PROYECTO",
-        "list": "ESTADO_TRELLO"
+# Función de extracción
+def extraer_prioridad_asignado(label):
+    if pd.isna(label):
+        return None, None
+    prioridad = re.search(r"\{ *(\d+) *\}", label)
+    asignado = next((nombre for nombre in recursos_validos if nombre in label), None)
+    return (int(prioridad.group(1)) if prioridad else None), asignado
+
+# Aplicar extracción
+df[['PRIORIDAD', 'ASIGNADO A']] = df['labels'].apply(lambda x: pd.Series(extraer_prioridad_asignado(x)))
+
+# Renombrar columnas
+df.rename(columns={'Name': 'RM', 'board': 'PROYECTO', 'list': 'ESTADO TRELLO'}, inplace=True)
+
+# Selección y orden
+df_final = df[['ASIGNADO A', 'PRIORIDAD', 'PROYECTO', 'ESTADO TRELLO', 'RM']]
+df_final.sort_values(by=['ASIGNADO A', 'PRIORIDAD', 'PROYECTO', 'ESTADO TRELLO'], inplace=True)
+
+# Insertar filas en blanco al cambiar el valor de 'ASIGNADO A'
+output_rows = []
+prev_asignado = None
+for _, row in df_final.iterrows():
+    if row['ASIGNADO A'] != prev_asignado and prev_asignado is not None:
+        output_rows.append(pd.Series([None]*len(row), index=row.index))
+    output_rows.append(row)
+    prev_asignado = row['ASIGNADO A']
+df_formatted = pd.DataFrame(output_rows)
+
+# Exportar a Excel con formato
+with pd.ExcelWriter("Tareas_Procesadas_Trello.xlsx", engine='xlsxwriter') as writer:
+    df_formatted.to_excel(writer, sheet_name='Trello', index=False, startrow=1, header=False)
+    workbook  = writer.book
+    worksheet = writer.sheets['Trello']
+    
+    # Formato de encabezado
+    header_format = workbook.add_format({
+        'bold': True, 'text_wrap': True, 'valign': 'middle',
+        'fg_color': '#D9D9D9', 'border': 1
     })
+    for col_num, value in enumerate(df_formatted.columns):
+        worksheet.write(0, col_num, value.upper(), header_format)
 
-    # Procesar archivo de issues
-    df_issues["#"] = pd.to_numeric(df_issues["#"], errors="coerce").astype("Int64")
+    # Ajustar ancho de columnas automáticamente
+    for i, col in enumerate(df_formatted.columns):
+        max_len = max(df_formatted[col].astype(str).map(len).max(), len(col)) + 2
+        worksheet.set_column(i, i, max_len)
 
-    # Cruce de archivos
-    df_combinado = pd.merge(df_principal, df_issues, how="left", left_on="NUMERO_RM", right_on="#")
-
-    # Preparar columnas finales
-    df_combinado["ASIGNADO A"] = df_combinado["ASIGNADO"].str.replace(r"\s*\(.*?\)", "", regex=True).str.upper()
-    df_combinado["ASUNTO_FINAL"] = np.where(
-        (df_combinado["Asunto"].isna()) & (df_combinado["PROYECTO"].str.upper() == "TABLERO DE CONTROL"),
-        df_combinado["Name"],
-        df_combinado["Asunto"]
-    )
-    df_combinado["ASUNTO_FINAL"] = df_combinado["ASUNTO_FINAL"].fillna("RM CERREDO")
-
-    # Seleccionar y renombrar columnas
-    df_final = df_combinado[[
-        "ASIGNADO A", "PRIORIDAD", "PROYECTO", "ESTADO_TRELLO", "NUMERO_RM", "ASUNTO_FINAL"
-    ]].rename(columns={
-        "ESTADO_TRELLO": "ESTADO TRELLO",
-        "NUMERO_RM": "NUMERO RM",
-        "ASUNTO_FINAL": "ASUNTO"
-    })
-
-    # Ordenar
-    df_final = df_final.sort_values(by=["ASIGNADO A", "PRIORIDAD", "PROYECTO", "ESTADO TRELLO"])
-
-    # Convertir a string para evitar errores al escribir en Excel
-    df_final_str = df_final.astype(str).replace({"<NA>": ""})
-
-    # Crear archivo Excel
-    wb = Workbook()
-    ws = wb.active
-    ws.title = "Consolidado"
-
-    header_font = Font(bold=True)
-    header_fill = PatternFill(start_color="D9D9D9", end_color="D9D9D9", fill_type="solid")
-    yellow_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
-
-    # Escribir encabezados con estilo
-    ws.append(df_final_str.columns.tolist())
-    for cell in ws[1]:
-        cell.font = header_font
-        cell.fill = header_fill
-
-    previous_assigned = None
-    for _, row in df_final_str.iterrows():
-        if previous_assigned and row["ASIGNADO A"] != previous_assigned:
-            ws.append([""] * len(df_final_str.columns))
-        ws.append(row.tolist())
-        if row["ASUNTO"] == "RM CERREDO":
-            for cell in ws[ws.max_row]:
-                cell.fill = yellow_fill
-        previous_assigned = row["ASIGNADO A"]
-
-    # Guardar archivo Excel
-    wb.save(salida_excel)
-
-# Ejemplo de uso:
-# procesar_reportes("ruta/al/archivo_principal.csv", "ruta/al/issues.csv", "salida/Reporte_Consolidado.xlsx")
+    # Centrar la columna PRIORIDAD
+    center_format = workbook.add_format({'align': 'center'})
+    col_idx = df_formatted.columns.get_loc("PRIORIDAD")
+    worksheet.set_column(col_idx, col_idx, None, center_format)
