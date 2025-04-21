@@ -37,6 +37,9 @@ El archivo tiene las siguientes columnas: Name, URL, board, labels, list.
 - Ajustar el tamaño de las columnas para que todas las celdas muestren todo el contenido (¡¡¡¡incluyendo los titulos!!!!)
 - Excepto el título, centrar el contenido de la columna PRIORIDAD.
 
+
+EL RESULTADO LO QUIERO EN UN .XLSX PARA DESCARGAR
+
 📄 Código Python Utilizado:
 
 import pandas as pd
