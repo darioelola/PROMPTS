@@ -1,7 +1,7 @@
 
-🎯 Prompt Profesional para ChatGPT:
+🎯 Prompt Profesional para ChatGPT (CORREGIDO)
 
-Procesar un archivo CSV exportado desde Trello para obtener la siguiente salida con formato profesional. 
+Procesar un archivo CSV exportado desde Trello para obtener la siguiente salida con formato profesional.  
 El archivo tiene las siguientes columnas: Name, URL, board, labels, list.
 
 🔹 Objetivo:
@@ -20,6 +20,8 @@ El archivo tiene las siguientes columnas: Name, URL, board, labels, list.
         - Carolina Gualdi
         - Franchesca Rivas
         - Luz Fox
+    - Si dentro del campo labels está la cadena "ASIGNADO QA", completar el campo "ASIGNADO A" con el valor "Luz Fox".
+
 - Mantener columna list (renombrada como "ESTADO TRELLO").
 
 🔹 Columnas de salida:
@@ -35,61 +37,70 @@ El archivo tiene las siguientes columnas: Name, URL, board, labels, list.
 - Encabezados en MAYÚSCULAS, NEGRITA, fondo gris claro.
 - Ordenar por: ASIGNADO A, PRIORIDAD, PROYECTO, ESTADO TRELLO.
 - Insertar fila en blanco al cambiar el valor de ASIGNADO A.
-- Ajustar el tamaño de las columnas para que todas las celdas muestren todo el contenido (¡¡¡¡incluyendo los titulos!!!!)
+- Ajustar el tamaño de las columnas para que todas las celdas muestren todo el contenido (¡¡¡¡incluyendo los títulos!!!!)
 - Excepto el título, centrar el contenido de la columna PRIORIDAD.
 
+🔽 Resultado esperado:
+Un archivo .xlsx descargable con formato profesional listo para presentación.
 
-EL RESULTADO LO QUIERO EN UN .XLSX PARA DESCARGAR
 
 📄 Código Python Utilizado:
 
 import pandas as pd
 import re
 
-# Cargar el CSV original
-df = pd.read_csv("nombre_del_archivo.csv")
+# Cargar el archivo CSV
+df = pd.read_csv("archivo_trello.csv")
 
 # Lista de recursos válidos
 recursos_validos = [
     "Dario Elola", "Daniel Bordon", "Valentina Juszkiewicz", "Renzo Antonioli",
-    "Lucas Gutierrez", "Vanina Zylberg", "Carolina Gualdi", "Franchesca Rivas"
+    "Lucas Gutierrez", "Vanina Zylberg", "Carolina Gualdi", "Franchesca Rivas", "Luz Fox"
 ]
 
-# Función de extracción
+# Función para extraer prioridad y asignado
 def extraer_prioridad_asignado(label):
     if pd.isna(label):
         return None, None
-    prioridad = re.search(r"\{ *(\d+) *\}", label)
-    asignado = next((nombre for nombre in recursos_validos if nombre in label), None)
+    prioridad = re.search(r"\{\s*(\d+)\s*\}", label)
+    if "ASIGNADO QA" in label.upper():
+        asignado = "Luz Fox"
+    else:
+        asignado = next((nombre for nombre in recursos_validos if nombre in label), None)
     return (int(prioridad.group(1)) if prioridad else None), asignado
 
-# Aplicar extracción
-df[['PRIORIDAD', 'ASIGNADO A']] = df['labels'].apply(lambda x: pd.Series(extraer_prioridad_asignado(x)))
+# Aplicar la extracción
+df[["PRIORIDAD", "ASIGNADO A"]] = df["labels"].apply(lambda x: pd.Series(extraer_prioridad_asignado(x)))
 
 # Renombrar columnas
-df.rename(columns={'Name': 'RM', 'board': 'PROYECTO', 'list': 'ESTADO TRELLO'}, inplace=True)
+df.rename(columns={
+    "Name": "RM",
+    "board": "PROYECTO",
+    "list": "ESTADO TRELLO"
+}, inplace=True)
 
 # Selección y orden
-df_final = df[['ASIGNADO A', 'PRIORIDAD', 'PROYECTO', 'ESTADO TRELLO', 'RM']]
-df_final.sort_values(by=['ASIGNADO A', 'PRIORIDAD', 'PROYECTO', 'ESTADO TRELLO'], inplace=True)
+df_final = df[["ASIGNADO A", "PRIORIDAD", "PROYECTO", "ESTADO TRELLO", "RM"]]
+df_final.sort_values(by=["ASIGNADO A", "PRIORIDAD", "PROYECTO", "ESTADO TRELLO"], inplace=True)
 
-# Insertar filas en blanco al cambiar el valor de 'ASIGNADO A'
+# Insertar fila en blanco al cambiar ASIGNADO A
 output_rows = []
 prev_asignado = None
 for _, row in df_final.iterrows():
-    if row['ASIGNADO A'] != prev_asignado and prev_asignado is not None:
+    if row["ASIGNADO A"] != prev_asignado and prev_asignado is not None:
         output_rows.append(pd.Series([None]*len(row), index=row.index))
     output_rows.append(row)
-    prev_asignado = row['ASIGNADO A']
+    prev_asignado = row["ASIGNADO A"]
 df_formatted = pd.DataFrame(output_rows)
 
-# Exportar a Excel con formato
+# Exportar a Excel
+import xlsxwriter
 with pd.ExcelWriter("Tareas_Procesadas_Trello.xlsx", engine='xlsxwriter') as writer:
     df_formatted.to_excel(writer, sheet_name='Trello', index=False, startrow=1, header=False)
-    workbook  = writer.book
+    workbook = writer.book
     worksheet = writer.sheets['Trello']
-    
-    # Formato de encabezado
+
+    # Encabezado con estilo
     header_format = workbook.add_format({
         'bold': True, 'text_wrap': True, 'valign': 'middle',
         'fg_color': '#D9D9D9', 'border': 1
@@ -97,12 +108,12 @@ with pd.ExcelWriter("Tareas_Procesadas_Trello.xlsx", engine='xlsxwriter') as wri
     for col_num, value in enumerate(df_formatted.columns):
         worksheet.write(0, col_num, value.upper(), header_format)
 
-    # Ajustar ancho de columnas automáticamente
+    # Ajustar ancho automático
     for i, col in enumerate(df_formatted.columns):
         max_len = max(df_formatted[col].astype(str).map(len).max(), len(col)) + 2
         worksheet.set_column(i, i, max_len)
 
-    # Centrar la columna PRIORIDAD
+    # Centrar columna PRIORIDAD
     center_format = workbook.add_format({'align': 'center'})
     col_idx = df_formatted.columns.get_loc("PRIORIDAD")
     worksheet.set_column(col_idx, col_idx, None, center_format)
