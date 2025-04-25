@@ -352,7 +352,7 @@ FIN COMENTARIOS
 IMPORTANTE: Realiza el proceso de principio a fin, hasta llegar a la generacion de del archivo .xlsx para descargar sin consultarme. No omitas ninguna de las intrucciones anteriores... Revisa y asegurate que se aplique todo. APLICA TOSOS LOS FORMATOS CONDICIONALES SOLICITADOS EN EL RESULTADO
 
 
-
+EL NOMBRE DEL ARCHIVO RESULTANTE TENGA ESTE FORMATO "AÑO_MES_DIA"
 
 SUMO EJEMPLO DEL PAYTHON CON EL PROCESO:
 # Código completo de procesamiento como referencia
