@@ -1,3 +1,5 @@
+
+----Reporte de evolucion de RM
 WITH cambios AS (
   SELECT
     RM,
