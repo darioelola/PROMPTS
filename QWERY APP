@@ -1,0 +1,31 @@
+WITH cambios AS (
+  SELECT
+    RM,
+    Fecha,
+    Estado                                AS id_nuevo,
+    LAG(Estado) OVER (PARTITION BY RM ORDER BY Fecha) AS id_anterior
+  FROM historico_rm
+  WHERE Fecha BETWEEN '2025-08-01 00:00:00' AND '2025-08-07 23:59:59'
+)
+SELECT
+  c.RM,
+  t.asunto                     AS asunto,
+  ei_old.nombre                AS estado_viejo,
+  ei_new.nombre                AS estado_nuevo,
+  c.Fecha                      AS momento_del_cambio
+FROM cambios c
+  -- traigo el asunto según RM
+  JOIN tickets t
+    ON c.RM = t.rm
+  -- nombres de estado
+  JOIN estado_interno ei_old 
+    ON c.id_anterior = ei_old.id
+  JOIN estado_interno ei_new 
+    ON c.id_nuevo     = ei_new.id
+WHERE
+  c.id_anterior IS NOT NULL
+  AND c.id_anterior <> c.id_nuevo
+ORDER BY
+  c.RM,
+  c.Fecha;
+/////////////////////////////////////////////////////////////////////////
