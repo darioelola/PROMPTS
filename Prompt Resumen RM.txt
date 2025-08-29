@@ -1,0 +1,71 @@
+Prompt
+
+Toma el archivo de Excel provisto y ejecuta el siguiente proceso:
+
+Alcance y encabezados
+
+Trabaja sobre la hoja principal.
+
+Considera fila 1 como encabezados.
+
+Selección y orden de columnas
+
+Conserva solo estas columnas y en este orden final:
+
+Persona a cargo (antes J, ubicarla como columna A)
+
+RM
+
+Asunto
+
+Sistema
+
+Estado Interno
+
+Asegúrate de que RM se trate como texto para no perder ceros a la izquierda.
+
+Filtrado
+
+Elimina todas las filas cuyo Estado Interno sea exactamente:
+
+CERRADOS / En PROD.
+
+En Análisis | BACKLOG
+
+Al comparar, ignora mayúsculas/minúsculas y espacios al inicio o al final.
+
+Ordenamiento
+
+Ordena primero por Persona a cargo (ascendente).
+
+Dentro de cada persona, ordena por Estado Interno (ascendente).
+
+Formato visual (divisiones por grupo)
+
+Cada vez que cambie Persona a cargo, agrega una línea divisoria: aplica borde superior grueso a la primera fila del nuevo grupo (sin insertar filas en blanco).
+
+Formato condicional (estados “EN CURSO”)
+
+Aplica formato condicional solo a las filas de datos (excluye encabezados) donde Estado Interno sea exactamente:
+
+En Análisis | EN CURSO
+
+En Prueba Func. | EN CURSO
+
+Estilo: fondo verde claro y letras negras.
+
+Relleno sugerido: RGB(198,239,206) (#C6EFCE)
+
+Color de fuente: RGB(0,0,0) (#000000)
+
+Mantén visibles los bordes divisores aunque la fila esté resaltada.
+
+Salida
+
+Devuelve un único archivo .xlsx con una hoja llamada Resultado que contenga el dataset procesado en el orden de columnas indicado.
+
+Codificación UTF-8 para preservar acentos y caracteres especiales.
+
+Control de calidad
+
+Indica (en una celda de notas o comentario) la cantidad de filas eliminadas y la cantidad de filas resultantes.
