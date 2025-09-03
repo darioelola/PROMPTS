@@ -1,71 +1,317 @@
-Prompt
+Quiero que revises estos dos archivos y me des un informe de las diferencias entre cada solapa y un resumen general, la idea es visualizar loa avances y cambios en el proyecto dame el excel dos con el detalle de los cambios. Te paso el codigo py como referencia, dame el archivo excel para descargar # -*- coding: utf-8 -*-
+"""
+Comparador de dos Excels con generación de Dashboard (KPIs y gráficos).
+Uso:
+    python comparador_dashboard.py "archivo_1.xlsx" "archivo_2.xlsx" "salida.xlsx"
+"""
+import sys
+import pandas as pd
+import numpy as np
+import hashlib
+import re
+from pathlib import Path
 
-Toma el archivo de Excel provisto y ejecuta el siguiente proceso:
+def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+    df.columns = [re.sub(r"\s+", " ", str(c)).strip() for c in df.columns]
+    return df
 
-Alcance y encabezados
+def unionize_columns(dfa: pd.DataFrame, dfb: pd.DataFrame):
+    cols = sorted(set(map(str, dfa.columns)).union(set(map(str, dfb.columns))))
+    A = dfa.copy()
+    B = dfb.copy()
+    for c in cols:
+        if c not in A.columns:
+            A[c] = np.nan
+        if c not in B.columns:
+            B[c] = np.nan
+    A = A[cols]
+    B = B[cols]
+    return A, B, cols
 
-Trabaja sobre la hoja principal.
+CANDIDATE_KEYS = [
+    "RM", "Rm", "rm", "#",
+    "ID", "Id", "id",
+    "Código", "Codigo", "codigo",
+    "Ticket", "ticket",
+    "Key", "key",
+    "Clave", "clave",
+    "Nro", "Número", "Numero", "number", "Number",
+]
 
-Considera fila 1 como encabezados.
+def find_key(dfa: pd.DataFrame, dfb: pd.DataFrame):
+    common_cols = [c for c in dfa.columns if c in dfb.columns]
+    for pref in CANDIDATE_KEYS:
+        for c in common_cols:
+            if c.lower() == pref.lower():
+                if dfa[c].notna().sum() > 0 and dfb[c].notna().sum() > 0:
+                    uniq_a = dfa[c].dropna().nunique()
+                    uniq_b = dfb[c].dropna().nunique()
+                    if len(dfa) > 0 and len(dfb) > 0:
+                        if uniq_a >= len(dfa)*0.8 or uniq_b >= len(dfb)*0.8:
+                            return c, f"Se detectó '{c}' como posible clave."
+    best = None
+    best_score = 0
+    for c in common_cols:
+        uniq_a = dfa[c].dropna().nunique()
+        uniq_b = dfb[c].dropna().nunique()
+        score = 0
+        if len(dfa) > 0:
+            score = max(score, uniq_a/len(dfa))
+        if len(dfb) > 0:
+            score = max(score, uniq_b/len(dfb))
+        if score > best_score and score >= 0.8:
+            best = c
+            best_score = score
+    if best:
+        return best, f"Se utilizó '{best}' como clave por unicidad."
+    return None, "No se encontró una columna clave única; se comparará por filas completas (hash)."
 
-Selección y orden de columnas
+def hash_row_tuple(values) -> str:
+    s = "␟".join([str(v) if not pd.isna(v) else "<NA>" for v in values])
+    import hashlib
+    return hashlib.sha1(s.encode("utf-8")).hexdigest()
 
-Conserva solo estas columnas y en este orden final:
+def compare_sheets(dfA: pd.DataFrame, dfB: pd.DataFrame, sheet_name: str):
+    dfa = normalize_columns(dfA)
+    dfb = normalize_columns(dfB)
+    dfa, dfb, cols = unionize_columns(dfa, dfb)
+    key_col, key_note = find_key(dfa, dfb)
 
-Persona a cargo (antes J, ubicarla como columna A)
+    summary = {
+        "Solapa": sheet_name,
+        "Filas_A": len(dfa),
+        "Filas_B": len(dfb),
+        "Filas_agregadas": 0,
+        "Filas_eliminadas": 0,
+        "Filas_modificadas": 0,
+        "Celdas_modificadas": 0,
+        "Clave_usada": key_col if key_col else "(sin clave)",
+        "Observaciones": key_note,
+    }
 
-RM
+    cambios_rows = []
+    agregados_df = pd.DataFrame()
+    eliminados_df = pd.DataFrame()
 
-Asunto
+    if key_col:
+        dfa_keyed = dfa.set_index(key_col, drop=False)
+        dfb_keyed = dfb.set_index(key_col, drop=False)
 
-Sistema
+        keys_A = set(dfa_keyed.index.tolist())
+        keys_B = set(dfb_keyed.index.tolist())
 
-Estado Interno
+        added_keys = sorted(list(keys_B - keys_A), key=lambda x: (str(type(x)), str(x)))
+        removed_keys = sorted(list(keys_A - keys_B), key=lambda x: (str(type(x)), str(x)))
+        common_keys = sorted(list(keys_A & keys_B), key=lambda x: (str(type(x)), str(x)))
 
-Asegúrate de que RM se trate como texto para no perder ceros a la izquierda.
+        summary["Filas_agregadas"] = len(added_keys)
+        summary["Filas_eliminadas"] = len(removed_keys)
 
-Filtrado
+        if added_keys:
+            agregados_df = dfb_keyed.loc[added_keys].reset_index(drop=True)
+        if removed_keys:
+            eliminados_df = dfa_keyed.loc[removed_keys].reset_index(drop=True)
 
-Elimina todas las filas cuyo Estado Interno sea exactamente:
+        for k in common_keys:
+            rowA = dfa_keyed.loc[k]
+            rowB = dfb_keyed.loc[k]
+            if isinstance(rowA, pd.DataFrame):
+                rowA = rowA.iloc[0]
+            if isinstance(rowB, pd.DataFrame):
+                rowB = rowB.iloc[0]
 
-CERRADOS / En PROD.
+            diffs = []
+            for c in dfa.columns:
+                va = rowA[c]
+                vb = rowB[c]
+                if (pd.isna(va) and pd.isna(vb)) or (va == vb):
+                    continue
+                try:
+                    if pd.notna(va) and pd.notna(vb):
+                        if pd.api.types.is_number(va) and pd.api.types.is_number(vb):
+                            if float(va) == float(vb):
+                                continue
+                except Exception:
+                    pass
+                diffs.append((c, va, vb))
+            if diffs:
+                summary["Filas_modificadas"] += 1
+                summary["Celdas_modificadas"] += len(diffs)
+                for c, va, vb in diffs:
+                    cambios_rows.append({
+                        "Solapa": sheet_name,
+                        "Clave": k,
+                        "Columna": c,
+                        "Valor_original": va,
+                        "Valor_nuevo": vb,
+                    })
+    else:
+        hashes_A = dfa.apply(lambda r: hash_row_tuple(r.values.tolist()), axis=1) if len(dfa) else pd.Series([], dtype=object)
+        hashes_B = dfb.apply(lambda r: hash_row_tuple(r.values.tolist()), axis=1) if len(dfb) else pd.Series([], dtype=object)
+        setA = set(hashes_A.tolist())
+        setB = set(hashes_B.tolist())
+        added = list(setB - setA)
+        removed = list(setA - setB)
+        summary["Filas_agregadas"] = len(added)
+        summary["Filas_eliminadas"] = len(removed)
+        if added:
+            agregados_df = dfb.loc[hashes_B.isin(added)].reset_index(drop=True)
+        if removed:
+            eliminados_df = dfa.loc[hashes_A.isin(removed)].reset_index(drop=True)
 
-En Análisis | BACKLOG
+    cambios_df = pd.DataFrame(cambios_rows) if cambios_rows else pd.DataFrame(columns=["Solapa","Clave","Columna","Valor_original","Valor_nuevo"])
+    return summary, cambios_df, agregados_df, eliminados_df
 
-Al comparar, ignora mayúsculas/minúsculas y espacios al inicio o al final.
+def add_dashboard(workbook, writer, resumen_df, concat_changes_df):
+    dash_name = "Dashboard"
+    ws = workbook.add_worksheet(dash_name)
+    writer.sheets[dash_name] = ws
 
-Ordenamiento
+    fmt_title = workbook.add_format({"bold": True, "font_size": 14})
+    fmt_subtitle = workbook.add_format({"bold": True, "font_size": 11})
+    fmt_num = workbook.add_format({"num_format": "#,##0"})
+    fmt_hdr = workbook.add_format({"bold": True, "bg_color": "#F2F2F2", "border": 1})
+    fmt_cell = workbook.add_format({"border": 1})
 
-Ordena primero por Persona a cargo (ascendente).
+    total_added = int(resumen_df["Filas_agregadas"].sum()) if not resumen_df.empty else 0
+    total_removed = int(resumen_df["Filas_eliminadas"].sum()) if not resumen_df.empty else 0
+    total_rows_changed = int(resumen_df["Filas_modificadas"].sum()) if not resumen_df.empty else 0
+    total_cells_changed = int(resumen_df["Celdas_modificadas"].sum()) if not resumen_df.empty else 0
 
-Dentro de cada persona, ordena por Estado Interno (ascendente).
+    ws.write("A1", "Seguimiento de Cambios - Dashboard", fmt_title)
+    ws.write("A3", "KPI principales", fmt_subtitle)
+    ws.write("A4", "Filas agregadas", fmt_hdr); ws.write_number("B4", total_added, fmt_num)
+    ws.write("A5", "Filas eliminadas", fmt_hdr); ws.write_number("B5", total_removed, fmt_num)
+    ws.write("A6", "Filas modificadas", fmt_hdr); ws.write_number("B6", total_rows_changed, fmt_num)
+    ws.write("A7", "Celdas modificadas", fmt_hdr); ws.write_number("B7", total_cells_changed, fmt_num)
 
-Formato visual (divisiones por grupo)
+    ws.write("D3", "Top solapas por cambios", fmt_subtitle)
+    top_df = pd.DataFrame(columns=["Solapa","Filas_modificadas","Agregadas","Eliminadas"])
+    if not resumen_df.empty:
+        top_df = resumen_df[["Solapa","Filas_modificadas","Filas_agregadas","Filas_eliminadas"]].copy()
+        top_df.columns = ["Solapa","Filas_modificadas","Agregadas","Eliminadas"]
+        top_df = top_df.sort_values(by=["Filas_modificadas","Agregadas","Eliminadas"], ascending=False).head(15)
 
-Cada vez que cambie Persona a cargo, agrega una línea divisoria: aplica borde superior grueso a la primera fila del nuevo grupo (sin insertar filas en blanco).
+    start_row = 4
+    start_col = 3
+    for j, col in enumerate(top_df.columns):
+        ws.write(start_row, start_col + j, col, fmt_hdr)
+    for i in range(len(top_df)):
+        for j, col in enumerate(top_df.columns):
+            val = top_df.iloc[i, j]
+            if isinstance(val, (int, float, np.integer, np.floating)):
+                ws.write_number(start_row + 1 + i, start_col + j, float(val), fmt_cell)
+            else:
+                ws.write(start_row + 1 + i, start_col + j, str(val), fmt_cell)
 
-Formato condicional (estados “EN CURSO”)
+    if not top_df.empty:
+        chart = workbook.add_chart({'type': 'column'})
+        cat_range = [dash_name, start_row + 1, start_col + 0, start_row + len(top_df), start_col + 0]
+        val_range = [dash_name, start_row + 1, start_col + 1, start_row + len(top_df), start_col + 1]
+        chart.add_series({'name': 'Filas modificadas','categories': cat_range,'values': val_range})
+        chart.set_title({'name': 'Cambios por Solapa'})
+        chart.set_legend({'position': 'none'})
+        ws.insert_chart('D12', chart, {'x_scale': 1.3, 'y_scale': 1.2})
 
-Aplica formato condicional solo a las filas de datos (excluye encabezados) donde Estado Interno sea exactamente:
+        chart2 = workbook.add_chart({'type': 'column', 'subtype': 'stacked'})
+        chart2.add_series({'name': 'Agregadas','categories': cat_range,'values': [dash_name, start_row + 1, start_col + 2, start_row + len(top_df), start_col + 2]})
+        chart2.add_series({'name': 'Eliminadas','categories': cat_range,'values': [dash_name, start_row + 1, start_col + 3, start_row + len(top_df), start_col + 3]})
+        chart2.set_title({'name': 'Altas vs Bajas por Solapa'})
+        chart2.set_legend({'position': 'bottom'})
+        ws.insert_chart('L12', chart2, {'x_scale': 1.3, 'y_scale': 1.2})
 
-En Análisis | EN CURSO
+    ws.write("A10", "Columnas más modificadas", fmt_subtitle)
+    if concat_changes_df is not None and not concat_changes_df.empty and "Columna" in concat_changes_df.columns:
+        col_counts = concat_changes_df.groupby("Columna", dropna=False).size().reset_index(name="Cambios")
+        col_counts = col_counts.sort_values("Cambios", ascending=False).head(15)
+        ws.write("A12", "Columna", fmt_hdr); ws.write("B12", "Cambios", fmt_hdr)
+        for i, row in col_counts.iterrows():
+            ws.write(13 + i, 0, str(row["Columna"]), fmt_cell)
+            ws.write_number(13 + i, 1, int(row["Cambios"]), fmt_cell)
+        chart3 = workbook.add_chart({'type': 'bar'})
+        chart3.add_series({'name': 'Cambios','categories': [dash_name, 13, 0, 13 + len(col_counts) - 1, 0],'values': [dash_name, 13, 1, 13 + len(col_counts) - 1, 1]})
+        chart3.set_title({'name': 'Top columnas modificadas'})
+        chart3.set_legend({'position': 'none'})
+        ws.insert_chart('A20', chart3, {'x_scale': 1.3, 'y_scale': 1.2})
+    else:
+        ws.write("A12", "No hay detalle de cambios a nivel celda (no se detectó clave única).")
 
-En Prueba Func. | EN CURSO
+def comparar_y_generar_dashboard(path1: str, path2: str, out_path: str) -> str:
+    file1 = Path(path1)
+    file2 = Path(path2)
+    bookA = pd.read_excel(file1, sheet_name=None)
+    bookB = pd.read_excel(file2, sheet_name=None)
 
-Estilo: fondo verde claro y letras negras.
+    sheetsA = set(bookA.keys())
+    sheetsB = set(bookB.keys())
 
-Relleno sugerido: RGB(198,239,206) (#C6EFCE)
+    resumen_rows = []
+    detail_changes = []
+    agregados_map = {}
+    eliminados_map = {}
 
-Color de fuente: RGB(0,0,0) (#000000)
+    new_sheets = sorted(list(sheetsB - sheetsA), key=str.lower)
+    deleted_sheets = sorted(list(sheetsA - sheetsB), key=str.lower)
+    common_sheets = sorted(list(sheetsA & sheetsB), key=str.lower)
 
-Mantén visibles los bordes divisores aunque la fila esté resaltada.
+    for s in common_sheets:
+        summary, cambios_df, agregados_df, eliminados_df = compare_sheets(bookA[s], bookB[s], s)
+        resumen_rows.append(summary)
+        if not cambios_df.empty:
+            detail_changes.append((s, cambios_df))
+        if not agregados_df.empty:
+            agregados_map[s] = agregados_df
+        if not eliminados_df.empty:
+            eliminados_map[s] = eliminados_df
 
-Salida
+    for s in new_sheets:
+        resumen_rows.append({
+            "Solapa": s, "Filas_A": 0, "Filas_B": len(bookB[s]),
+            "Filas_agregadas": len(bookB[s]), "Filas_eliminadas": 0,
+            "Filas_modificadas": 0, "Celdas_modificadas": 0,
+            "Clave_usada": "(n/a)", "Observaciones": "Solapa NUEVA en el archivo 2."
+        })
+    for s in deleted_sheets:
+        resumen_rows.append({
+            "Solapa": s, "Filas_A": len(bookA[s]), "Filas_B": 0,
+            "Filas_agregadas": 0, "Filas_eliminadas": len(bookA[s]),
+            "Filas_modificadas": 0, "Celdas_modificadas": 0,
+            "Clave_usada": "(n/a)", "Observaciones": "Solapa ELIMINADA respecto del archivo 1."
+        })
 
-Devuelve un único archivo .xlsx con una hoja llamada Resultado que contenga el dataset procesado en el orden de columnas indicado.
+    resumen_df = pd.DataFrame(resumen_rows)
+    if not resumen_df.empty:
+        resumen_df = resumen_df.sort_values(by=["Filas_modificadas","Filas_agregadas","Filas_eliminadas"],
+                                            ascending=[False, False, False]).reset_index(drop=True)
 
-Codificación UTF-8 para preservar acentos y caracteres especiales.
+    out = Path(out_path)
+    with pd.ExcelWriter(out, engine="xlsxwriter") as writer:
+        resumen_df.to_excel(writer, index=False, sheet_name="Resumen")
+        concat_changes = pd.DataFrame()
+        if detail_changes:
+            concat_changes = pd.concat([df.assign(Solapa=sheet) if 'Solapa' not in df.columns else df for sheet, df in detail_changes], ignore_index=True)
+            cols = ["Solapa","Clave","Columna","Valor_original","Valor_nuevo"]
+            concat_changes = concat_changes[[c for c in cols if c in concat_changes.columns] + [c for c in concat_changes.columns if c not in cols]]
+            concat_changes.to_excel(writer, index=False, sheet_name="Cambios (celda a celda)")
+        for s, df in agregados_map.items():
+            df.to_excel(writer, index=False, sheet_name=f"Agregados_{s}"[:31])
+        for s, df in eliminados_map.items():
+            df.to_excel(writer, index=False, sheet_name=f"Eliminados_{s}"[:31])
+        for s in new_sheets:
+            normalize_columns(bookB[s]).to_excel(writer, index=False, sheet_name=f"Nueva_{s}"[:31])
+        for s in deleted_sheets:
+            normalize_columns(bookA[s]).to_excel(writer, index=False, sheet_name=f"Eliminada_{s}"[:31])
 
-Control de calidad
+        add_dashboard(writer.book, writer, resumen_df, concat_changes)
 
-Indica (en una celda de notas o comentario) la cantidad de filas eliminadas y la cantidad de filas resultantes.
+    return out.as_posix()
+
+if __name__ == "__main__":
+    if len(sys.argv) < 4:
+        print("Uso: python comparador_dashboard.py archivo_1.xlsx archivo_2.xlsx salida.xlsx")
+        sys.exit(1)
+    salida = comparar_y_generar_dashboard(sys.argv[1], sys.argv[2], sys.argv[3])
+    print("Archivo generado:", salida)
+
+  
