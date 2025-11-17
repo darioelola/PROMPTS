@@ -116,6 +116,7 @@ El resto de los datos se mantenga sin modificaciones.
 si en el archivo final el campo estado queda con los valores:
 
 MDA-Resuelto
+MDA-Cerrado
 
 marcar el registro con un color verde
 ----------------------------------------------------------------------
